@@ -9,10 +9,6 @@ import numbers
 
 config_folder = "config"
 
-# Read in data from the pressure controller (this seems not to work yet)
-def serialRead(ser):
-    while ser.in_waiting:  # Or: while ser.inWaiting():
-        print (ser.readline())
 
 class configSender:
     def __init__(self, devname,baudrate):
@@ -20,7 +16,7 @@ class configSender:
         self.config_folder  = config_folder
 
         time.sleep(2)
-        self.s.write("off"+'\n')
+        self.s.write(("off"+'\n').encode())
         time.sleep(0.1)
         self.sendCommand("chan",1)
         time.sleep(0.1)
@@ -105,9 +101,9 @@ class configSender:
             txt+=";%0.5f"%(values)
         else:
             raise ValueError('sendCommand expects either a list or a number')
-
         print(txt)
-        self.s.write(txt +'\n')
+        cmd = txt+'\n'
+        self.s.write(cmd.encode())
 
 
     def handlePID(self):
@@ -135,7 +131,7 @@ class configSender:
     
     def readStuff(self):
         while self.s.in_waiting:  # Or: while ser.inWaiting():
-            print self.s.readline().strip()
+            print (self.s.readline().decode().strip())
     
 
 
@@ -161,11 +157,6 @@ if __name__ == '__main__':
 
         # Upload the configuration and save it
         pres.setConfig(sys.argv[1])
-        #pres.readStuff()
-        #while True:
-            #pres.readStuff()
-            
-        
         pres.shutdown()
     elif len(sys.argv)==1:
         serial_set = get_serial_path()
@@ -176,11 +167,7 @@ if __name__ == '__main__':
         pres=configSender(serial_set.get("devname"), serial_set.get("baudrate"))
 
         # Upload the configuration and save it
-        pres.setConfig('default')
-        #pres.readStuff()
-        #while True:
-            #pres.readStuff()
-            
+        pres.setConfig('default')            
         pres.shutdown()
 
 
