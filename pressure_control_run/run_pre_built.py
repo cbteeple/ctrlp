@@ -8,69 +8,67 @@ import os
 import yaml
 from pynput.keyboard import Key, Listener
 
-dataBack=True
-saveData = True
+sys.path.insert(1, 'utils')
+from serial_handler import SerialHandler
+
+data_back=True
+save_data = True
 traj_folder = "traj_built"
 curr_flag_file = os.path.join("traj_built","last_sent.txt")
 
 
 restartFlag = False
 
-# Read in data from the pressure controller (this seems not to work yet)
-def serialRead(ser):
-    while ser.in_waiting:  # Or: while ser.inWaiting():
-        print (ser.readline())
-
-
-
-
 
 class PressureController:
-    def __init__(self, devname,baudrate,cycles=1,speedFactor=1.0):
+    def __init__(self, devname=None,baudrate=None,serial_hand=None,cycles=1,speed_factor=1.0):
         
-        if baudrate is None:
-            self.s = devname
+        # Initialize the serial handler
+        self.sh = SerialHandler()
+        if serial_hand is not None:
+            self.sh = serial_hand
+        elif devname is None and baudrate is None:
+            self.sh.read_serial_settings()
+            self.sh.initialize()
         else:
-            self.s = serial.Serial(devname,baudrate)
+            self.sh.initialize(devname,baudrate)
             
         self.traj_folder  = traj_folder
-        self.speedFactor = speedFactor
+        self.speed_factor = speed_factor
         self.cycles      = cycles
-        self.saveData = saveData
+        self.save_data = False
+        self.data_back = data_back
 
-        time.sleep(1)
-
-
-
-
+        # Read in the name of the trajectory that was last sent and create a data output file
         with open(curr_flag_file,'r') as f:
-            # use safe_load instead of load
             outfile = f.read()
             f.close()
 
-        self.createOutFile(outfile)
+        if self.save_data:
+            self.create_out_file(outfile)
+
+        time.sleep(1)
       
       
     def initialize(self):
-        self.s.write("echo;0"+'\n')
-        #self.s.write("load"+'\n')
-        self.s.write("set;0;0"+'\n')
-        self.s.write("trajloop;%d"%(self.cycles)+'\n')
-        self.s.write("trajspeed;%0.5f"%(self.speedFactor)+'\n')
-        self.s.write("mode;2"+'\n')
-        #s.write('on')
+        self.sh.send_command('echo',0)
+        #self.sh.send_command('load')
+        self.sh.send_command('set',[0, 0])
+        self.sh.send_command('trajloop',self.cycles, format='%d')
+        self.sh.send_command('trajspeed',self.speed_factor)
+        self.sh.send_command('mode', 2, format='%d')
+        #self.sh.send_command('on')
 
         time.sleep(2.5)
 
 
-    def createOutFile(self,filename):
+    def create_out_file(self,filename):
         outFile=os.path.join('data',filename)
 
         dirname = os.path.dirname(outFile)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        
         i = 0
         while os.path.exists("%s_%04d.txt" % (outFile,i) ):
             i += 1
@@ -81,32 +79,37 @@ class PressureController:
 
 
             
-    def startTraj(self):
-        if dataBack:
-            self.s.write("on\n")
-            
-        self.s.write("trajstart"+'\n')
+    def start_traj(self, save=True):
+        self.save_data=save
+        if self.data_back:
+            self.sh.send_command('on')
         
+        self.sh.send_command('trajstart')
+    
+
+    def stop_traj(self):
+        self.sh.send_command('off')
+        self.sh.send_command('trajstop')
+
 
     def shutdown(self):
-        self.s.write("off\n")
-        self.s.write("trajstop"+'\n')
-        #self.s.write("mode;3"+'\n')
-        #self.s.write("set;0;0"+'\n')
-        self.s.close()
+        #self.sh.send_command('mode', 3, format='%d')
+        #self.sh.send_command('set', [0,0])
+        self.sh.shutdown()
 
         self.out_file.close()
         
     
-    def readStuff(self):
-        if self.s.in_waiting:  # Or: while ser.inWaiting():
-            line = self.s.readline().strip()
+    def read_stuff(self):
+        line = self.sh.read_line()
+
+        if line is not None:
             print(line)
-            if self.saveData:
-                self.saveStuff(line)
+            if self.save_data:
+                self.save_stuff(line)
 
 
-    def saveStuff(self, line):
+    def save_stuff(self, line):
         self.out_file.write(line+'\n')
     
 
@@ -171,24 +174,17 @@ if __name__ == '__main__':
 
 
 
-            # Get the serial object to use
-            inFile=os.path.join("config","comms","serial_config.yaml")
-            with open(inFile) as f:
-                # use safe_load instead of load
-                serial_set = yaml.safe_load(f)
-                f.close()
-
             # Create a pressure controller object
-            pres=PressureController(serial_set.get("devname"), serial_set.get("baudrate"), cycles,speedFact)
+            pres=PressureController(cycles=cycles,speed_factor=speedFact)
 
             pres.initialize();
             
-            pres.startTraj()
-            #pres.readStuff()
+            pres.start_traj(save=save_data)
+            #pres.read_stuff()
             while True:
-                pres.readStuff()
+                pres.read_stuff()
                 if restartFlag is True:
-                    pres.startTraj()
+                    pres.start_traj()
                     restartFlag = False
                 
         except KeyboardInterrupt:

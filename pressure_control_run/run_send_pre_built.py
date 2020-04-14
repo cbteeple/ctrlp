@@ -22,29 +22,24 @@ board_teensy = True;
 restartFlag = False
 exitFlag    = False
 
-# Read in data from the pressure controller (this seems not to work yet)
-def serialRead(ser):
-    while ser.in_waiting:  # Or: while ser.inWaiting():
-        print (ser.readline())
-
-
-
-  
+ 
 
 
 if __name__ == '__main__':
     if 2<= len(sys.argv)<=4:
 
         if len(sys.argv)==4:
-            wrap = int(sys.argv[3])
-        else:
-            wrap = False
-            
-        
-        if len(sys.argv)==3:
-            speedFact = 1.0/float(sys.argv[2])
+            speedFact = float(sys.argv[3])
         else:
             speedFact= 1.0
+
+        if len(sys.argv)>=3:
+            cycles = int(sys.argv[2])
+        else:
+            cycles = 1
+        
+        print(cycles)
+        print(speedFact)
         
         try:
 
@@ -77,37 +72,30 @@ if __name__ == '__main__':
                 on_release=on_release)
             listener.start()
 
-            # Get the serial object to use
-            inFile=os.path.join("config","comms","serial_config.yaml")
-            with open(inFile) as f:
-                # use safe_load instead of load
-                serial_set = yaml.safe_load(f)
-                f.close()
-
-
+            
             # Create a pressure controller object
-            traj=TrajSend(serial_set.get("devname"), serial_set.get("baudrate"))
+            traj=TrajSend()
             traj.board_teensy=board_teensy
-            traj.getTraj(sys.argv[1])
+            traj.get_traj(sys.argv[1])
 
             traj.speedFactor = speedFact
 
             # Upload the trajectory and start it
-            traj.sendTraj()
-            traj.readStuff()
+            traj.send_traj()
+            traj.sh.read_line()
 
 
 
             # Create a pressure controller object
-            pres=PressureController(traj.s, None, wrap)
+            pres=PressureController(serial_hand = traj.sh, cycles=cycles,speed_factor=speedFact)
 
             
-            pres.startTraj()
-            #pres.readStuff()
+            pres.start_traj()
+            #pres.sh.read_line()
             while True:
-                pres.readStuff()
+                pres.sh.read_line(display=True)
                 if restartFlag is True:
-                    pres.startTraj()
+                    pres.start_traj()
                     restartFlag = False
                 
                 if exitFlag:
