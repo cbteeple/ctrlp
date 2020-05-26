@@ -36,7 +36,7 @@ class PressureController:
         self.traj_folder  = traj_folder
         self.speed_factor = speed_factor
         self.cycles      = cycles
-        self.save_data = False
+        self.save_data = True
         self.data_back = data_back
 
         # Read in the name of the trajectory that was last sent and create a data output file
@@ -95,6 +95,7 @@ class PressureController:
     def shutdown(self):
         #self.sh.send_command('mode', 3, format='%d')
         #self.sh.send_command('set', [0,0])
+        self.stop_traj()
         self.sh.shutdown()
 
         self.out_file.close()
