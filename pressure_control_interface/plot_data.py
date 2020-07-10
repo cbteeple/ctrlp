@@ -5,6 +5,7 @@ import sys
 import os
 import pickle
 import yaml
+import numpy as np
 
 with open("save_paths.yaml") as f:
     save_paths = yaml.safe_load(f)
@@ -22,10 +23,9 @@ class DataParser:
         # set up stuff
         self.data_path = data_path
         self.echo = []
-        self.time = []
-        self.setpoint = []
-        self.measured = []
-        self.master_pressure = []
+        self.setpoint = {'time': [], 'value':[]}
+        self.measured = {'time': [], 'value':[]}
+        self.master_pressure = {'time': [], 'value':[]}
 
 
     # Read in the raw data
@@ -35,53 +35,83 @@ class DataParser:
         # If filename exists, open it
         with open(fulfile,'r') as f:
             line = f.readline()
+            cnt=1
             while line:
                 line = line.strip()
                 self._parse_line(line)
                 line = f.readline()
+                cnt+=1
+                if cnt>10:
+                    break
             
 
 
     def _parse_line(self, line):
         # If first character is underscore, store that in the "echo" list
-        # Else - the line must contain data
-            # Split line by tabs
-            # Convert first item from ms to sec and store in "time" list
-            # If second item is 0, store the rest of the line in "setpoint" list
-            # Elif second item is 1, store the rest of the line in "measured" list
-            # Elif second item is 2, store the rest of the line in "master_pressure" list
-        print(line)
-
-    def _parse_one(self, filename):
-        # open the data and parse it
-        self._load_raw_data(filename)
+        if line[0] == '_':
+            self.echo.append(line[1:])
         
-        # save parsed data in a better format
+        # Else - the line must contain data
+        else:
+            # Split line by tabs and parse
+            line_vec = line.split('\t')
+            time_ms = int(line_vec[0])
+            time_sec = float(time_ms)/1000.0
+            data_type = int(line_vec[1])
+            data = [float(x) for x in line_vec[2:]]
+
+            # If second item is 0, store the rest of the line in "setpoint" list
+            if data_type ==0:
+                self.setpoint['time'].append(time_sec)
+                self.setpoint['value'].append(data)
+
+            # Elif second item is 1, store the rest of the line in "measured" list
+            elif data_type ==1:
+                self.measured['time'].append(time_sec)
+                self.measured['value'].append(data)
+
+            # Elif second item is 2, store the rest of the line in "master_pressure" list
+            elif data_type ==2:
+                self.master_pressure['time'].append(time_sec)
+                self.master_pressure['value'].append(data)
+            
+            
+    def parse_data(self, filename):
+        if isinstance(filename, str):
+            # open the data file and parse it
+            self._load_raw_data(filename)
+        else:
+            print("ERROR: Please give the data parser one filename or a list of filenames")
 
 
-    def save_data(self, filename, extension='.pkl'):
+    def save_data(self, filename):
+        fullfile = os.path.join(self.data_path,filename)
+        print(fullfile)
         out = dict()
         out['echo'] = self.echo
-        out['time'] = self.time
         out['setpoint'] = self.setpoint
         out['measured'] = self.measured
         out['master_pressure'] = self.master_pressure
 
         # Save the data in a file
-        pass
+        if filename[-4:] == '.pkl':
+            with open(fullfile,'wb') as f:
+                pickle.dump(out,f)
 
+        elif filename[-5:] == '.yaml':
+            with open(fullfile,'w') as f:
+                yaml.dump(out,f)
 
+        elif filename[-4:] == '.csv':
+            out = []
+            with open(fullfile,'w') as f:
+                np.savetxt(f, out, delimiter=",")
 
-    def parse_data(self, filenames):
-        if isinstance(filenames, list):
-            for filename in filenames:
-                self._parse_one(filename)
-                
-        elif isinstance(filenames, str):
-            self._parse_one(filenames)
-        else:
-            print("ERROR: Please give the data parser one filename or a list of filenames")
 
 if __name__ == '__main__':
     parser = DataParser()
-    parser.parse_data('example/setpoint_traj_demo_0000.txt')
+
+    filenames = ['example/setpoint_traj_demo_0000.txt']
+    for filename in filenames:
+        parser.parse_data(filename)
+        parser.save_data(filename.replace('.txt','.pkl'))
