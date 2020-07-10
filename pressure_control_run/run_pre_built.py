@@ -14,6 +14,7 @@ from serial_handler import SerialHandler
 data_back=True
 save_data = True
 traj_folder = "traj_built"
+data_base = 'E:/pressure_data'
 curr_flag_file = os.path.join("traj_built","last_sent.txt")
 
 
@@ -63,7 +64,7 @@ class PressureController:
 
 
     def create_out_file(self,filename):
-        outFile=os.path.join('data',filename)
+        outFile=os.path.join(data_base,filename)
 
         dirname = os.path.dirname(outFile)
         if not os.path.exists(dirname):
