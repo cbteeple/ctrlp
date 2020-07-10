@@ -30,10 +30,16 @@ class DataParser:
 
     # Read in the raw data
     def _load_raw_data(self, filename):
+        fulfile=os.path.join(self.data_path,filename)
+        print(fulfile)
         # If filename exists, open it
-        with open(filename,'r') as f:
-            line = "_" # get one line of the file
-            self._parse_line(line)
+        with open(fulfile,'r') as f:
+            line = f.readline()
+            while line:
+                line = line.strip()
+                self._parse_line(line)
+                line = f.readline()
+            
 
 
     def _parse_line(self, line):
@@ -44,12 +50,12 @@ class DataParser:
             # If second item is 0, store the rest of the line in "setpoint" list
             # Elif second item is 1, store the rest of the line in "measured" list
             # Elif second item is 2, store the rest of the line in "master_pressure" list
-        pass
+        print(line)
 
     def _parse_one(self, filename):
         # open the data and parse it
+        self._load_raw_data(filename)
         # save parsed data in a better format
-        print(filename)
 
 
     def save_data(self, filename, extension='.pkl'):
@@ -76,4 +82,5 @@ class DataParser:
             print("ERROR: Please give the data parser one filename or a list of filenames")
 
 if __name__ == '__main__':
-    d = DataParser()
+    parser = DataParser()
+    parser.parse_data('example/setpoint_traj_demo_0000.txt')
