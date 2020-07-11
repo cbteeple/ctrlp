@@ -35,6 +35,9 @@ class DataParser:
     def __init__(self, data_path = data_base):
         # set up stuff
         self.data_path = data_path
+    
+
+    def _reset_data(self):
         self.echo = []
         self.setpoint = {'time': [], 'value':[]}
         self.measured = {'time': [], 'value':[]}
@@ -111,6 +114,7 @@ class DataParser:
 
     # Parse data from a file
     def parse_data(self, filename):
+        self._reset_data()
         if isinstance(filename, str):
             # Read the data from a file
             in_data=None
