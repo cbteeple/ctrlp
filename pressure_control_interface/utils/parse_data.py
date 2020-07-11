@@ -146,7 +146,7 @@ class DataParser:
             print("ERROR: Please give the data parser one filename or a list of filenames")
 
     # Plot the data all on one graph
-    def plot(self, filename=None, ylabel="Data", time_from_zero = False):
+    def plot(self, filename=None, ylabel="Data", time_from_zero = False, show = False):
         plt.figure()
          
         if self.setpoint['time']:
@@ -168,7 +168,10 @@ class DataParser:
             fullfile = os.path.join(self.data_path,filename)
             plt.savefig(fullfile,dpi=300)
 
-        plt.show()
+        if show:
+            plt.show()
+        
+        plt.close()
 
 
     # Save parsed data into a file

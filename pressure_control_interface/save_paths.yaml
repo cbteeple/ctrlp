@@ -1,2 +1,3 @@
 preferred: "E:/pressure_data"
 default:   "data"
+temp:      "C:/Users/clt596/Documents/Microrobotics Lab/Soft Grasping Platform/palms/Testing/pressure_data"
