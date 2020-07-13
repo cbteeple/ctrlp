@@ -3,3 +3,4 @@
 *.spyproject
 
 *.pyc
+.vscode
