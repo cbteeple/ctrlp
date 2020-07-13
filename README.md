@@ -14,7 +14,7 @@ All dependencies are managed in the reqirements file.
 	- [sorotraj](https://pypi.org/project/sorotraj/) (`pip install sorotraj`)
 
 ## Usage
-[Instructions in the documentation](https://cbteeple.github.io/pressure_controller_docs/)
+[Instructions in the documentation](https://ctrl-p.cbteeple.com/top-level)
 
 ## About Ctrl-P
 The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
