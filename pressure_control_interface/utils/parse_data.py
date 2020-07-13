@@ -8,6 +8,7 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+import seaborn as sns
 from cycler import cycler
 from .get_files import get_save_path
 
