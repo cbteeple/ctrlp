@@ -1,14 +1,5 @@
-# Ctrl-P 2.0 - Python Control Interface
-The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth. This repo contains the python control interface.
-
-Ctrl-P has three parts:
-- [Arduino-Based Firmware](https://github.com/cbteeple/pressure_controller)
-- [Python Control Interface](https://github.com/cbteeple/pressure_control_interface)
-- [ROS Driver](https://github.com/cbteeple/pressure_control_cbt)
-
-## Official Documentation
-[Ctrl-P Documentation](https://cbteeple.github.io/pressure_controller_docs/)
-
+# Ctrl-P 2.0: Python Control Interface
+The top-level control interface for controlling a Ctrl-P pressure control system.
 
 ## Dependencies
 All dependencies are managed in the reqirements file.
@@ -22,6 +13,13 @@ All dependencies are managed in the reqirements file.
 	- [yaml](https://pyyaml.org/wiki/PyYAMLDocumentation) (`pip install pyyaml`)
 	- [sorotraj](https://pypi.org/project/sorotraj/) (`pip install sorotraj`)
 
-## How to use the code:
+## Usage
 [Instructions in the documentation](https://cbteeple.github.io/pressure_controller_docs/)
 
+## About Ctrl-P
+The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
+
+Ctrl-P has three parts:
+- [Arduino-Based Firmware](https://github.com/cbteeple/pressure_controller)
+- [Python Control Interface](https://github.com/cbteeple/pressure_control_interface)
+- [ROS Driver](https://github.com/cbteeple/pressure_control_cbt)
