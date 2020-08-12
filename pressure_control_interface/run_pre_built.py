@@ -7,10 +7,10 @@ import sys
 import os
 import yaml
 from pynput.keyboard import Key, Listener
-from utils.get_files import get_save_path
 
 sys.path.insert(1, 'utils')
 from serial_handler import SerialHandler
+from get_files import get_save_path
 
 data_back=True
 save_data = True
