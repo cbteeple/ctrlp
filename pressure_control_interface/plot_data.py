@@ -1,7 +1,11 @@
 import os
-from utils.parse_data import DataParser
-from utils.get_files import get_files_recursively
-from utils.get_files import get_save_path
+import sys
+
+# Import a few utility modules
+sys.path.insert(1, 'utils')
+from parse_data import DataParser
+from get_files import get_files_recursively
+from get_files import get_save_path
 
 
 # Get the desired save path from save_paths.yaml
