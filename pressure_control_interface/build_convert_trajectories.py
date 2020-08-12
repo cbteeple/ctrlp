@@ -1,7 +1,8 @@
 import sorotraj
 import os
 
-from utils.get_files import get_save_path
+sys.path.insert(1, 'utils')
+from get_files import get_save_path
 
 folder = 'palm'
 files_to_use = ['rot_gait','translate']

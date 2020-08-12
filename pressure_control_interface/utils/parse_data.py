@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import seaborn as sns
 from cycler import cycler
-from .get_files import get_save_path
+from get_files import get_save_path
 
 pal0 = sns.color_palette('pastel')
 pal1 = sns.color_palette('bright')

@@ -5,10 +5,10 @@ import time
 import sys
 import os
 import yaml
-from utils.get_files import get_save_path
 
 sys.path.insert(1, 'utils')
 from serial_handler import SerialHandler
+from get_files import get_save_path
 
 # Get the desired save path from save_paths.yaml
 traj_folder = get_save_path(which='traj_built')
