@@ -1,3 +1,9 @@
-preferred: "E:/pressure_data"
+preferred: "data" #"F:/pressure_data"
 default:   "data"
 temp:      "C:/Users/clt596/Documents/Microrobotics Lab/Soft Grasping Platform/palms/Testing/pressure_data"
+
+config: config
+
+traj_setup: "traj_setup"
+traj_built: "traj_built"
+#traj_built: C:\Users\clt596\Documents\Microrobotics Lab\Soft Grasping Platform\modeling\fingertip_model\traj\sweep_dobj_ltipcommand_fudge0.1_newcal_base100

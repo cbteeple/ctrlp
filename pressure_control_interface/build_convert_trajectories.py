@@ -1,10 +1,18 @@
 import sorotraj
 import os
 
-setup_location = 'traj_setup/palm'
-build_location = 'traj_built/palm'
+from utils.get_files import get_save_path
 
+folder = 'palm'
 files_to_use = ['rot_gait','translate']
+
+
+# Get the desired save path from save_paths.yaml
+setup_base = get_save_path(which='traj_setup')
+build_base = get_save_path(which='traj_built')
+
+setup_location = os.path.join(setup_base,folder)
+build_location = os.path.join(build_base,folder)
 
 # Define a line-by-line conversion function to use
 #   This example converts from orthogonal axes to differential actuation.

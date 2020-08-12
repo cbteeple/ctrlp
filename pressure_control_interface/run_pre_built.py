@@ -7,15 +7,18 @@ import sys
 import os
 import yaml
 from pynput.keyboard import Key, Listener
+from utils.get_files import get_save_path
 
 sys.path.insert(1, 'utils')
 from serial_handler import SerialHandler
 
 data_back=True
 save_data = True
-traj_folder = "traj_built"
-data_base = 'E:/pressure_data'
-curr_flag_file = os.path.join("traj_built","last_sent.txt")
+
+# Get the desired save path from save_paths.yaml
+traj_folder = get_save_path(which='traj_built')
+data_base= get_save_path(which='preferred')
+curr_flag_file = os.path.join(traj_folder,"last_sent.txt")
 
 
 restartFlag = False

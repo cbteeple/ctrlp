@@ -5,12 +5,15 @@ import time
 import sys
 import os
 import yaml
+from utils.get_files import get_save_path
 
 sys.path.insert(1, 'utils')
 from serial_handler import SerialHandler
 
-traj_folder = "traj_built"
-curr_flag_file = os.path.join("traj_built","last_sent.txt")
+# Get the desired save path from save_paths.yaml
+traj_folder = get_save_path(which='traj_built')
+curr_flag_file = os.path.join(traj_folder,"last_sent.txt")
+
 
 restartFlag = False
 board_teensy= True

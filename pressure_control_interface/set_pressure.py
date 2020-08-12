@@ -112,7 +112,7 @@ class PressureController:
     def readStuff(self):
         if self.s.in_waiting:  # Or: while ser.inWaiting():
             print(' ')
-            print self.s.readline().strip()
+            print (self.s.readline().strip())
     
 
 

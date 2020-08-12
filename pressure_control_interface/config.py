@@ -9,7 +9,10 @@ import yaml
 sys.path.insert(1, 'utils')
 from serial_handler import SerialHandler
 
-config_folder = "config"
+from utils.get_files import get_save_path
+
+# Get the desired save path from save_paths.yaml
+config_folder = get_save_path(which='config')
 
 
 class ConfigSender:

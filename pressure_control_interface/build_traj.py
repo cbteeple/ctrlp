@@ -4,9 +4,12 @@ import sorotraj
 import os
 import sys
 
+from utils.get_files import get_save_path
 
-setup_location = "traj_setup"
-build_location  = "traj_built"
+# Get the desired save path from save_paths.yaml
+setup_location = get_save_path(which='traj_setup')
+build_location = get_save_path(which='traj_built')
+
 
 
 if __name__ == '__main__':
