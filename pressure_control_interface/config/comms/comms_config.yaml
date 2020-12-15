@@ -1,0 +1,2 @@
+hardware: "double3.4"
+devnames: ["/dev/ttyACM0", "/dev/ttyACM1"]
