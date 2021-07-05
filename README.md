@@ -18,3 +18,4 @@ Ctrl-P has three parts:
 
 Related Packages:
 - [Pressure Controller Skills](https://github.com/cbteeple/pressure_controller_skills): Build complex parametric skills using straightforward definition files.
+- [Visual Servoing](https://github.com/cbteeple/ihm_servoing): Example of setting up a realtime feedback controller.
