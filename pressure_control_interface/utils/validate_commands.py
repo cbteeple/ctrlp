@@ -88,7 +88,8 @@ class CommandValidator:
         try:
             if line_in.startswith(self.cmd_echo['prefix']):
                 #Look for an underscore - This is an echo response
-                line_in=line_in.replace(self.cmd_echo['prefix']+"NEW ",'')
+                line_in = line_in.lower()
+                line_in=line_in.replace(self.cmd_echo['prefix']+"new ",'')
                 line_in=line_in.strip(self.cmd_echo['prefix'])
                 line_split = line_in.split(self.cmd_echo['cmd_delimeter'])
 
@@ -114,10 +115,10 @@ class CommandValidator:
                 if data_type == 0: # Handle incomming setpoint data
                     # Here marks a new data point. Send the previous one.
                     if self.data_in is not None:
-                        if self.first_time is None:
-                            self.first_time = copy.deepcopy(self.data_in['time'])
+                        #if self.first_time is None:
+                        #    self.first_time = copy.deepcopy(self.data_in['time'])
 
-                        self.data_in['time'] = self.data_in['time']-self.first_time
+                        #self.data_in['time'] = self.data_in['time'] -self.first_time
                         output = (self.data_in, 'data')
 
                     # Now begin the next one

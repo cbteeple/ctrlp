@@ -1,5 +1,5 @@
 settings:
-  version: "2.0"
+  version: "2.1"
   delimeter: ";"
   ending:    "\n"
 
@@ -81,7 +81,14 @@ commands:
   enum: {psi: 0, kpa: 1, bar: 2, atm: 3}
   num_args: 2
   split_how: null
-  
+
+- cmd: 'currtime'
+  config_name: "curr_time"
+  default_value: 0
+  description: 'Set the current display time on the controller (in ms)'
+  num_args: 1
+  split_how: null
+
 
 # Safety settings
 - cmd: 'maxp'
@@ -187,6 +194,15 @@ commands:
   description: 'Start using the integrator when measured pressure is within this amount of the setpoint (in pressure units)'
   num_args: 1
   split_how: null
+
+- cmd: 'voffset'
+  config_name: valve_offsets
+  default_value: 0
+  description: 'Set the PWM offset values for valves one particular channel'
+  num_args: 3
+  split_how:
+    single_arg: 'idx0'
+    multi_arg:  'idx0'
 
 
 # Trajectory setup
@@ -296,4 +312,41 @@ commands:
   default_value: 333
   description: 'LCD update time (in ms)'
   num_args: 0
+  split_how: null
+
+
+  # Dynamixel
+- cmd: 'temp'
+  config_name: temperature
+  default_value: null
+  description: 'Get the current temperature'
+  num_args: 0
+  split_how: null
+
+- cmd: 'volt'
+  config_name: voltage
+  default_value: null
+  description: 'Get the current voltage'
+  num_args: 0
+  split_how: null
+
+- cmd: 'speed'
+  config_name: speed
+  default_value: null
+  description: 'Set the motor speed'
+  num_args: num_channels
+  split_how: null
+
+- cmd: 'torque'
+  config_name: torque
+  default_value: null
+  description: 'Set the motor torque'
+  num_args: num_channels
+  split_how: null
+
+- cmd: 'cont'
+  config_name: cont
+  default_value: null
+  description: 'Set continuous grasping'
+  num_args: num_channels
   split_how: null

@@ -1,2 +1,2 @@
-hardware: "single2.0_3chan"
-devnames: ["COM4"]
+hardware: "single3.4"
+devnames: ["dev/ttyACM0"]
