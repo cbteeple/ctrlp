@@ -1,0 +1,11 @@
+color_scheme:
+    primary: "#4fa6ff"
+    primary_active: "#c4e1ff"
+    secondary: "#4fa6ff"
+    secondary_active: "#c4e1ff"
+    background: "#ffffff"
+
+file_types:
+    - ["Trajectory Setup Files", "*.yaml"]
+    - ["Trajectory Build Files", "*.traj"]
+    - ["All Files", "*.*"]

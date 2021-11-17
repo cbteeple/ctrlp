@@ -43,7 +43,7 @@ class ConfigSender:
 
     # Read the cofniguration from a file
     def read_config(self, filename):
-        inFile=os.path.join(self.config_folder,filename+".yaml")
+        inFile=os.path.join(self.config_folder,"control",filename+".yaml")
 
         if os.path.isfile(inFile):
             with open(inFile) as f:

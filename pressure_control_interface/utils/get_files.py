@@ -29,3 +29,23 @@ def get_save_path(filename="save_paths.yaml", which=None):
         data_base = save_paths.get(which)
     
     return data_base
+
+def load_yaml(filename):
+    out = None
+    with open(filename, 'r') as f:
+        out = yaml.safe_load(f)
+    
+    return out
+
+
+def save_yaml(data, filename):
+    try:
+        with open(filename, 'r') as f:
+            yaml.dump(data, f, default_flow_style=False)
+        out=True
+    except:
+        out=False
+        
+    return out
+
+    
