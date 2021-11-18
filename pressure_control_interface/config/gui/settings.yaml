@@ -1,8 +1,10 @@
 color_scheme:
-    primary: "#4fa6ff"
+    primary_normal: "#c4e1ff"
     primary_active: "#c4e1ff"
-    secondary: "#4fa6ff"
-    secondary_active: "#c4e1ff"
+    primary_disabled: "#dddddd"
+    secondary_normal: "#4fa6ff"
+    secondary_active: "#4fa6ff"
+    secondary_disabled: "#dddddd"
     background: "#ffffff"
 
 file_types:

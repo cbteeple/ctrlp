@@ -35,8 +35,7 @@ class PressureControlGui:
                 if config.get('channels'):
                     basename = os.path.basename(filename)
                     self.status_bar.config(text = 'New config "%s" loaded'%(basename))
-                    self.config=config
-                    return True
+                    return config
                 else:
                     self.status_bar.config(text ='Incorrect config format')
                     return False
@@ -46,9 +45,48 @@ class PressureControlGui:
             
         except:
             self.status_bar.config(text ='New config was not loaded')
-            raise
             return False
 
+
+    def parse_config(self, config):
+        self.config={}
+
+        self.num_channels = config.get("channels", {}).get('num_channels', None)
+        self.curr_pressures = [0.0]*self.num_channels
+
+        if isinstance(config, dict):
+            for key in config:
+                if key == "max_pressure" or key == "min_pressure":
+                    self.config[key]=self.expand_pressure_limits(config[key])
+                elif key == "PID":
+                    self.config[key]=self.expand_pid(config[key])
+                else:
+                    self.config[key] = config[key]
+
+
+    def expand_pressure_limits(self, value):
+        if isinstance(value, list):
+            return value
+        else:
+            if self.num_channels is not None:
+                return [value]*self.num_channels
+            else:
+                return []
+
+
+    def expand_pid(self, value):
+        all_equal = value.get('all_equal', True)
+        values = value.get('values', True)
+        if all_equal:
+            return [values]*self.num_channels
+        else:
+            return values
+
+
+    def send_config(self):
+        self.status_bar.config(text ='Sending config...')
+        print(self.config)        
+        self.status_bar.config(text ='Sent config!')
 
 
     def open_config_file(self):
@@ -64,6 +102,7 @@ class PressureControlGui:
         if filepath.endswith(".yaml"):
             new_config = self.get_config(filepath)
         if new_config:
+            self.parse_config(new_config)
             basename = os.path.basename(filepath)
             self.curr_config_file['basename'] = basename
             self.curr_config_file['dirname'] = os.path.dirname(filepath)
@@ -97,13 +136,6 @@ class PressureControlGui:
         self.window.title(f"Pressure Control Interface | Config Editor - {os.path.basename(filepath)}")
 
 
-    def send_config(self):
-        self.status_bar.config(text ='Sending config...')
-        print(self.config)        
-        self.status_bar.config(text ='Sent config!')
-
-
-
     def slider_changed(self, slider_num):
         try:
             #self.channels[slider_num][1].set(val)
@@ -117,9 +149,20 @@ class PressureControlGui:
             scale.set(scale_value)
             box.set(scale_value)
 
-            print(slider_num, scale_value)
+            self.curr_pressures[slider_num] = scale_value
+
+            if self.livesend.get():
+                self.set_pressure()
+
+            #print(slider_num, scale_value)
         except tk.TclError:
             pass
+
+
+    def set_pressure(self):
+        press = copy.deepcopy(self.curr_pressures)
+        press.insert(0, self.transition_speed.get())
+        print(press)
 
 
     def init_gui(self, config):
@@ -180,6 +223,12 @@ class PressureControlGui:
         )
         button.grid(row=0, column=0, sticky="ew", padx=5)
 
+        button2 = ttk.Button(self.fr_send_btns,
+            text="Open Pressure Control",
+            command=self.init_pressure_editor,
+        )
+        button2.grid(row=0, column=1, sticky="ew", padx=5)
+
 
     def del_control_sender(self):
         try:
@@ -188,37 +237,95 @@ class PressureControlGui:
             pass
         
 
+    def del_sliders(self):
+        try:
+            self.fr_sliders.destroy()
+            self.fr_slider_btns.destroy()
+        except:
+            pass
+
+
     def init_pressure_editor(self):
-        fr_sliders = tk.Frame(self.fr_sidebar, bd=2)
-        fr_sliders.grid(row=99, column=0, sticky="ns", pady=20)
-        self.init_sliders(fr_sliders)
+        self.del_sliders()
+
+        self.livesend = tk.IntVar()
+        self.livesend.set(0)
+        self.transition_speed = tk.DoubleVar()
+        self.transition_speed.set(self.config.get('transitions', 0.0))
+        
+        self.fr_slider_btns = tk.Frame(self.fr_sidebar, bd=2)
+        self.fr_slider_btns.grid(row=99, column=0, sticky="ns", pady=5)
+
+        button = ttk.Button(self.fr_slider_btns,
+            text="Set Pressures",
+            command=self.set_pressure,
+        )
+
+        button.grid(row=0, column=0, sticky="ew", padx=5)
+
+        button2 = ttk.Checkbutton(self.fr_slider_btns,
+            text="Send Pressures Live",
+            variable=self.livesend,
+        )
+
+        button2.grid(row=0, column=1, sticky="ew", padx=5)
+
+        spin = ttk.Spinbox(self.fr_slider_btns,
+                width=6,
+                from_=0.0, to=1000, increment=0.1,
+                textvariable=self.transition_speed,
+                font=('Arial', 14),
+                )
+        spin.grid(row=0, column=2, sticky="ew", padx=5)
+
+        self.fr_sliders = tk.Frame(self.fr_sidebar, bd=2)
+        self.fr_sliders.grid(row=98, column=0, sticky="ns", pady=20)
+        self.init_sliders(self.fr_sliders)
 
 
     def init_sliders(self, fr_sliders):
         self.channels=[]
-        for i in range(8):
+        for i in range(self.num_channels):
+            # Get current info
+            curr_max = self.config['max_pressure'][i]
+            curr_min = self.config['min_pressure'][i]
+            curr_on = self.config['channels']['states'][i]
+
+            if curr_on:
+                curr_state = "normal"
+            else:
+                curr_state = "disabled"
+
+            # Create a variable to share with the slider and spinbox
             spinval = tk.DoubleVar()
-            spinval.set(3.0)
+            spinval.set(self.curr_pressures[i])
             cb = lambda name, index, val, i=i: self.slider_changed(i)
             spinval.trace("w",cb)
+
+            # Create the slider
             scale = tk.Scale(fr_sliders, variable=spinval,
                 orient=tk.VERTICAL, length=130,
-                from_=50.0, to=0.0, resolution=0.1,
-                state="normal", activebackground=self.color_scheme['primary_active'], troughcolor=self.color_scheme['primary'],
+                from_=curr_max, to=curr_min, resolution=0.1,
+                state=curr_state,
+                font=('Arial', 12),
+                activebackground=self.color_scheme['primary_'+curr_state],
+                troughcolor=self.color_scheme['secondary_'+curr_state],
                 )
             scale.grid(row=2, column=i, sticky="ew", padx=5)
 
+            # Create the spinbox
             spin = ttk.Spinbox(fr_sliders,
-                width=7,
-                from_=0.0, to=50.0, increment=0.1,
-                textvariable=spinval
+                width=5,
+                from_=curr_min, to=curr_max, increment=0.1,
+                textvariable=spinval, state=curr_state,
+                font=('Arial', 14),
                 )
             spin.grid(row=4, column=i, sticky="ew", padx=5, pady=10)
-            #spin.set(3.0)
 
-            label_title = tk.Label(fr_sliders, text="%d"%(i), width=2, font=('Arial', 20, 'bold'))
-            label_max = tk.Label(fr_sliders, text="Top", width=7)
-            label_min = tk.Label(fr_sliders, text="Bot", width=7)
+            # Add max and min labels
+            label_title = tk.Label(fr_sliders, text="%d"%(i+1), width=2, font=('Arial', 20, 'bold'), state=curr_state)
+            label_max = tk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, state=curr_state)
+            label_min = tk.Label(fr_sliders, text="%0.1f"%(curr_min), width=7, state=curr_state)
             label_title.grid(row=0, column=i, sticky="s", pady=0)
             label_max.grid(row=1, column=i, sticky="s", pady=0)
             label_min.grid(row=3, column=i, sticky="n", pady=0)

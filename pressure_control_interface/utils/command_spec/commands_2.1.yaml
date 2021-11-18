@@ -134,7 +134,7 @@ commands:
 
 # Control settings
 - cmd: 'chan'
-  config_name: "channel_states"
+  config_name: "channels/states"
   default_value: 1
   description: 'Turn channels on or off'
   num_args:
