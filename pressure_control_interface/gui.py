@@ -170,6 +170,8 @@ class PressureControlGui:
             #print(slider_num, scale_value)
         except tk.TclError:
             pass
+        except IndexError:
+            pass
 
 
     def set_pressure(self):
@@ -187,6 +189,8 @@ class PressureControlGui:
 
         # Build the text pane, but button pane, and the slider pane
         self.txt_edit = tk.Text(self.window)
+        self.txt_edit.grid(row=0, column=1, sticky="nsew")
+        
         self.fr_sidebar = tk.Frame(self.window, relief=tk.RAISED, bd=2)
         self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
             foreground=self.color_scheme['secondary_normal'],
@@ -223,7 +227,6 @@ class PressureControlGui:
         #btn.grid(row=1, column=2, sticky="ew", padx=5)
 
         fr_buttons.grid(row=1, column=0, sticky="ns")
-        self.txt_edit.grid(row=0, column=1, sticky="nsew")
 
 
     def init_control_sender(self):
@@ -254,17 +257,54 @@ class PressureControlGui:
         try:
             self.fr_sliders.destroy()
             self.fr_slider_btns.destroy()
+            for chan in self.channels:
+                for item in chan:
+                    item.destroy()
         except:
             pass
+
+
+    def set_graph_colors(self):
+        self.graph_palette = {}
+        graph_colors = self.color_scheme['graph']
+        for color_key in graph_colors:
+            palette = graph_colors[color_key].get('palette',None)
+            args = graph_colors[color_key].get('args', {})
+            if isinstance(palette, list):
+                self.graph_palette[color_key] = palette
+            elif isinstance(palette, str):
+                if palette == "hls":
+                    self.graph_palette[color_key] = sns.hls_palette(self.num_channels, **args)
+                elif palette == "husl":
+                    self.graph_palette[color_key] = sns.husl_palette(self.num_channels, **args)
+                elif palette == "dark":
+                    self.graph_palette[color_key] = sns.dark_palette(self.num_channels, **args)
+                elif palette == "light":
+                    self.graph_palette[color_key] = sns.light_palette(self.num_channels, **args)
+                elif palette == "diverging":
+                    self.graph_palette[color_key] = sns.diverging_palette(self.num_channels, **args)
+                elif palette == "diverging":
+                    self.graph_palette[color_key] = sns.diverging_palette(self.num_channels, **args)
+                elif palette == "blend":
+                    self.graph_palette[color_key] = sns.blend_palette(self.num_channels, **args)
+                elif palette == "xkcd":
+                    self.graph_palette[color_key] = sns.xkcd_palette(self.num_channels, **args)
+                elif palette == "crayon":
+                    self.graph_palette[color_key] = sns.crayon_palette(self.num_channels, **args)
+                elif palette == "mpl":
+                    self.graph_palette[color_key] = sns.mpl_palette(self.num_channels, **args)
+                else:
+                    self.graph_palette[color_key] = sns.color_palette(palette, self.num_channels)
+            else:
+                self.graph_palette[color_key] = sns.color_palette("bright", self.num_channels)
+
+        sns.set_palette(self.graph_palette['primary'])
 
 
     def init_pressure_editor(self):
         self.del_sliders()
 
-        self.graph_palette = {}
-        self.graph_palette['primary'] = sns.color_palette("bright", self.num_channels)
-        self.graph_palette['primary_light'] = sns.color_palette("pastel", self.num_channels)
-        sns.set_palette(self.graph_palette['primary'])
+        self.set_graph_colors()
 
         self.livesend = tk.IntVar()
         self.livesend.set(0)

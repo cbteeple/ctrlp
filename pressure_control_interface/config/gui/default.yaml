@@ -6,6 +6,14 @@ color_scheme:
     secondary_active: "#4fa6ff"
     secondary_disabled: "#dddddd"
     background: "#ffffff"
+    graph:
+        primary:
+            palette: "hls"
+            args: {l: 0.4}
+
+        primary_light:
+            palette: "hls"
+            args: {l: 0.9}
 
 file_types:
     - ["Trajectory Setup Files", "*.yaml"]
