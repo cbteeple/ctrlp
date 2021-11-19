@@ -5,10 +5,21 @@ import os
 import sys
 import copy
 import time
+#import matplotlib.pyplot as plt
+import seaborn as sns
 
 sys.path.insert(1, 'utils')
 from comm_handler import CommHandler
 from get_files import get_save_path, load_yaml, save_yaml
+
+
+def _from_rgb(rgb):
+    """translates an rgb tuple of int to a tkinter friendly color code
+    """
+    rgb_int = [0]*3
+    for i, color in enumerate(rgb):
+        rgb_int[i] = int(color*255)
+    return "#%02x%02x%02x" % tuple(rgb_int)
 
 
 class PressureControlGui:
@@ -21,12 +32,14 @@ class PressureControlGui:
         self.data_base= get_save_path(which='preferred')
         self.curr_flag_file = os.path.join(self.traj_folder,"last_sent.txt")
 
-        self.settings = load_yaml(os.path.join(self.config_folder,'gui',"settings.yaml"))
+        self.load_settings()
+        self.curr_config_file={'basename':None, 'dirname': os.path.join(self.config_folder, 'control')}
 
+
+    def load_settings(self, filename="default.yaml"):
+        self.settings = load_yaml(os.path.join(self.config_folder,'gui',filename))
         self.file_types = self.settings['file_types']
         self.color_scheme = self.settings['color_scheme']
-
-        self.curr_config_file={'basename':None, 'dirname': os.path.join(self.config_folder, 'control')}
 
     def get_config(self, filename):
         try:
@@ -176,10 +189,10 @@ class PressureControlGui:
         self.txt_edit = tk.Text(self.window)
         self.fr_sidebar = tk.Frame(self.window, relief=tk.RAISED, bd=2)
         self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
-            foreground="black",
+            foreground=self.color_scheme['secondary_normal'],
             width=10,
             height=3,
-            font=12)
+            font=('Arial',12))
 
         self.fr_sidebar.grid(row=0, column=0, sticky="ns")
         self.status_bar.grid(row=0, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
@@ -201,13 +214,13 @@ class PressureControlGui:
             width=20,
             command=self.save_config_file,
         )
-        btn = ttk.Button(fr_buttons, text = 'Exit',
-                        command = self.window.destroy,
-                        width=10)
+        #btn = ttk.Button(fr_buttons, text = 'Exit',
+        #                command = self.window.destroy,
+        #                width=10)
 
         button.grid(row=1, column=0, sticky="ew", padx=5)
         button2.grid(row=1, column=1, sticky="ew", padx=5)
-        btn.grid(row=1, column=2, sticky="ew", padx=5)
+        #btn.grid(row=1, column=2, sticky="ew", padx=5)
 
         fr_buttons.grid(row=1, column=0, sticky="ns")
         self.txt_edit.grid(row=0, column=1, sticky="nsew")
@@ -247,6 +260,11 @@ class PressureControlGui:
 
     def init_pressure_editor(self):
         self.del_sliders()
+
+        self.graph_palette = {}
+        self.graph_palette['primary'] = sns.color_palette("bright", self.num_channels)
+        self.graph_palette['primary_light'] = sns.color_palette("pastel", self.num_channels)
+        sns.set_palette(self.graph_palette['primary'])
 
         self.livesend = tk.IntVar()
         self.livesend.set(0)
@@ -303,13 +321,21 @@ class PressureControlGui:
             spinval.trace("w",cb)
 
             # Create the slider
+            #scale = tk.Scale(fr_sliders, variable=spinval,
+            #    orient=tk.VERTICAL, length=130,
+            #    from_=curr_max, to=curr_min, resolution=0.1,
+            #    state=curr_state,
+            #    font=('Arial', 12),
+            #    activebackground=self.color_scheme['primary_'+curr_state],
+            #    troughcolor=self.color_scheme['secondary_'+curr_state],
+            #    )
             scale = tk.Scale(fr_sliders, variable=spinval,
                 orient=tk.VERTICAL, length=130,
                 from_=curr_max, to=curr_min, resolution=0.1,
                 state=curr_state,
                 font=('Arial', 12),
-                activebackground=self.color_scheme['primary_'+curr_state],
-                troughcolor=self.color_scheme['secondary_'+curr_state],
+                activebackground=_from_rgb(self.graph_palette['primary_light'][i]),
+                troughcolor=_from_rgb(self.graph_palette['primary'][i]),
                 )
             scale.grid(row=2, column=i, sticky="ew", padx=5)
 
@@ -318,14 +344,14 @@ class PressureControlGui:
                 width=5,
                 from_=curr_min, to=curr_max, increment=0.1,
                 textvariable=spinval, state=curr_state,
-                font=('Arial', 14),
+                font=('Arial', 12),
                 )
             spin.grid(row=4, column=i, sticky="ew", padx=5, pady=10)
 
             # Add max and min labels
             label_title = tk.Label(fr_sliders, text="%d"%(i+1), width=2, font=('Arial', 20, 'bold'), state=curr_state)
-            label_max = tk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, state=curr_state)
-            label_min = tk.Label(fr_sliders, text="%0.1f"%(curr_min), width=7, state=curr_state)
+            label_max = tk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, font=('Arial', 10), state=curr_state)
+            label_min = tk.Label(fr_sliders, text="%0.1f"%(curr_min), width=7, font=('Arial', 10), state=curr_state)
             label_title.grid(row=0, column=i, sticky="s", pady=0)
             label_max.grid(row=1, column=i, sticky="s", pady=0)
             label_min.grid(row=3, column=i, sticky="n", pady=0)
@@ -341,4 +367,6 @@ class PressureControlGui:
 
 if __name__ == "__main__":
     gui = PressureControlGui()
+    if len(sys.argv)==2:
+        gui.load_settings(sys.argv[1])
     gui.init_gui({})
