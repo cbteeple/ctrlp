@@ -7,6 +7,7 @@ import copy
 import time
 #import matplotlib.pyplot as plt
 import seaborn as sns
+import threading
 
 sys.path.insert(1, 'utils')
 from comm_handler import CommHandler
@@ -26,6 +27,9 @@ class PressureControlGui:
     def __init__(self):
         self.config = None
         self.pressures = None
+        self.ctrlp = None
+        self.read_thread = None
+        self.send_thread = None
         # Get the desired save path from save_paths.yaml
         self.traj_folder = get_save_path(which='traj_built')
         self.config_folder = get_save_path(which='config')
@@ -34,6 +38,35 @@ class PressureControlGui:
 
         self.load_settings()
         self.curr_config_file={'basename':None, 'dirname': os.path.join(self.config_folder, 'control')}
+
+
+
+    def connect_to_controller(self):
+        self.ctrlp = CommHandler()
+        self.ctrlp.read_serial_settings()
+        self.ctrlp.initialize()
+        time.sleep(2.0)
+        
+        self.run_read_thread = True
+        self.read_thread = threading.Thread(target=self.read_data)
+        self.read_thread.start()
+
+        self.ctrlp.send_command("echo",1)
+        self.ctrlp.send_command("speed",200)
+        self.ctrlp.send_command("cont",1)
+        #self.ctrlp.send_command("echo",0)
+        self.ctrlp.send_command("on",None)
+
+
+    def start_pressure_thread(self):
+        if self.send_thread is None:
+            self.run_read_thread = True
+            self.send_thread = threading.Thread(target=self.set_pressure_threaded)
+            self.send_thread.start()
+
+
+
+
 
 
     def load_settings(self, filename="default.yaml"):
@@ -164,8 +197,8 @@ class PressureControlGui:
 
             self.curr_pressures[slider_num] = scale_value
 
-            if self.livesend.get():
-                self.set_pressure()
+            #if self.livesend.get():
+            #    self.set_pressure()
 
             #print(slider_num, scale_value)
         except tk.TclError:
@@ -174,10 +207,43 @@ class PressureControlGui:
             pass
 
 
-    def set_pressure(self):
+    def _set_pressure(self):
         press = copy.deepcopy(self.curr_pressures)
         press.insert(0, self.transition_speed.get())
-        print(press)
+
+        if self.ctrlp:
+            self.ctrlp.send_command("set",press)
+        
+        #print(press)
+
+    def set_pressure(self):
+        if self.livesend.get():
+            return
+        else:
+            self._set_pressure()
+            return
+
+
+    def set_data_stream(self):
+        if self.live_data.get():
+            self.ctrlp.send_command("on",None)
+        else:
+            self.ctrlp.send_command("off",None)
+
+
+    def read_data(self):
+        while self.run_read_thread:
+            line=self.ctrlp.read_all()
+            if line:
+                print(line)
+
+    
+    def set_pressure_threaded(self):
+        while self.run_read_thread:
+            if self.livesend.get():
+                self._set_pressure()
+            time.sleep(0.1)
+            
 
 
     def init_gui(self, config):
@@ -202,6 +268,8 @@ class PressureControlGui:
         self.status_bar.grid(row=0, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
 
         self.init_control_editor(config)
+
+        self.window.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.window.mainloop()
 
 
@@ -237,13 +305,20 @@ class PressureControlGui:
             text="Send To Controller",
             command=self.send_config,
         )
-        button.grid(row=0, column=0, sticky="ew", padx=5)
+        button.grid(row=0, column=1, sticky="ew", padx=5)
 
         button2 = ttk.Button(self.fr_send_btns,
             text="Open Pressure Control",
             command=self.init_pressure_editor,
         )
-        button2.grid(row=0, column=1, sticky="ew", padx=5)
+        button2.grid(row=0, column=2, sticky="ew", padx=5)
+
+        button3 = ttk.Button(self.fr_send_btns,
+            text="Connect",
+            command=self.connect_to_controller,
+        )
+
+        button3.grid(row=0, column=0, sticky="ew", padx=5)
 
 
     def del_control_sender(self):
@@ -328,6 +403,7 @@ class PressureControlGui:
 
         button2.grid(row=0, column=1, sticky="ew", padx=5)
 
+
         spin = ttk.Spinbox(self.fr_slider_btns,
                 width=6,
                 from_=0.0, to=1000, increment=0.1,
@@ -336,9 +412,23 @@ class PressureControlGui:
                 )
         spin.grid(row=0, column=2, sticky="ew", padx=5)
 
+
+        self.live_data = tk.IntVar()
+        self.live_data.set(1)
+        cb = lambda name, index, val: self.set_data_stream()
+        self.live_data.trace("w",cb)
+        button3 = ttk.Checkbutton(self.fr_slider_btns,
+            text="Data Stream",
+            variable=self.live_data,
+        )
+
+        button3.grid(row=0, column=3, sticky="ew", padx=5)
+
         self.fr_sliders = tk.Frame(self.fr_sidebar, bd=2)
         self.fr_sliders.grid(row=98, column=0, sticky="ns", pady=20)
         self.init_sliders(self.fr_sliders)
+
+        self.start_pressure_thread()
 
 
     def init_sliders(self, fr_sliders):
@@ -400,13 +490,29 @@ class PressureControlGui:
 
             self.channels.append([scale, spin, spinval, label_max, label_min])
         
-        def update_sliders(self):
+    def update_sliders(self):
+        
+        self.channels
+
+
+    def on_window_close(self):
+        if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.shutdown()
+            self.window.destroy()
             
-            self.channels
+
+    def shutdown(self):
+        try:
+            self.run_read_thread = False
+        except:
+            pass
 
 
 if __name__ == "__main__":
     gui = PressureControlGui()
-    if len(sys.argv)==2:
-        gui.load_settings(sys.argv[1])
-    gui.init_gui({})
+    try:
+        if len(sys.argv)==2:
+            gui.load_settings(sys.argv[1])
+        gui.init_gui({})
+    except KeyboardInterrupt:
+        gui.on_window_close()

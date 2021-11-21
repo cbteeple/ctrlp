@@ -1,0 +1,3 @@
+- baudrate: 9600 #9600
+  num_channels: 5
+  cmd_spec: '2.2'
