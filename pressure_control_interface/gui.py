@@ -5,6 +5,7 @@ import os
 import sys
 import copy
 import time
+from serial.tools import list_ports
 #import matplotlib.pyplot as plt
 import seaborn as sns
 import threading
@@ -21,6 +22,43 @@ def _from_rgb(rgb):
     for i, color in enumerate(rgb):
         rgb_int[i] = int(color*255)
     return "#%02x%02x%02x" % tuple(rgb_int)
+
+
+
+class popupWindow(object):
+    def __init__(self,master, comm_options=None, hw_options=None):
+        if comm_options is None:
+            comm_options=self.get_ports()
+        if hw_options is None:
+            hw_options = []
+        top=self.top=tk.Toplevel(master)
+        top.title('Serial Config')
+        self.fr = tk.Frame(top, bd=2)
+        self.fr.pack()
+        self.comvar = tk.StringVar()
+        self.hwvar = tk.StringVar()
+        self.l=tk.Label(self.fr, text='Choose a Device:', width=30)
+        self.l.grid(row=0, column=0, sticky='ew', pady=5, padx=10)
+
+        self.e=ttk.OptionMenu(self.fr, self.hwvar, hw_options[0], *hw_options)
+        self.e.grid(row=1, column=0, sticky='ew', pady=5, padx=10)
+        self.e=ttk.OptionMenu(self.fr, self.comvar, comm_options[0], *comm_options)
+        self.e.grid(row=2, column=0, sticky='ew', pady=5, padx=10)
+
+        self.b=ttk.Button(self.fr,text='Ok',command=self.cleanup, width=30)
+        self.b.grid(row=99, column=0, sticky='ew', pady=5, padx=10)
+
+    def get_ports(self):
+        ports = list(list_ports.comports())
+        comports = []
+        for p in ports:
+            comports.append(p.device)
+        return comports
+
+    def cleanup(self):
+        self.comport=self.comvar.get()
+        self.hardware_setup = self.hwvar.get()
+        self.top.destroy()
 
 
 class PressureControlGui:
@@ -71,6 +109,10 @@ class PressureControlGui:
 
     def load_settings(self, filename="default.yaml"):
         self.settings = load_yaml(os.path.join(self.config_folder,'gui',filename))
+
+        hw_path = os.path.join(self.config_folder,'hardware')
+        self.hw_options = [f for f in os.listdir(hw_path) if os.path.isfile(os.path.join(hw_path, f))]
+
         self.file_types = self.settings['file_types']
         self.color_scheme = self.settings['color_scheme']
 
@@ -158,7 +200,7 @@ class PressureControlGui:
             with open(filepath, "r") as input_file:
                 text = input_file.read()
                 self.txt_edit.insert(tk.END, text)
-            self.window.title(f"Pressure Control Interface | Config Editor - {basename}")
+            self.root.title(f"Pressure Control Interface | Config Editor - {basename}")
         else:
             self.del_control_sender()
 
@@ -179,7 +221,7 @@ class PressureControlGui:
         
         self.curr_config_file['basename'] = os.path.basename(filepath)
         self.curr_config_file['dirname'] = os.path.dirname(filepath)
-        self.window.title(f"Pressure Control Interface | Config Editor - {os.path.basename(filepath)}")
+        self.root.title(f"Pressure Control Interface | Config Editor - {os.path.basename(filepath)}")
 
 
     def slider_changed(self, slider_num):
@@ -246,18 +288,28 @@ class PressureControlGui:
             
 
 
+    def get_serial_setup(self):
+        self.connect_btn['state']='disabled'
+        self.w=popupWindow(self.root, hw_options=self.hw_options)
+        self.root.wait_window(self.w.top)
+        print(self.w.hardware_setup)
+        print(self.w.comport)
+        self.connect_btn['state']='normal'
+        #self.connect_to_controller()
+
+
     def init_gui(self, config):
         # Make a new window
-        self.window = tk.Tk()
-        self.window.title("Pressure Control Interface")
-        self.window.rowconfigure(0, minsize=200, weight=1)
-        self.window.columnconfigure(1, minsize=200, weight=1)
+        self.root = tk.Tk()
+        self.root.title("Pressure Control Interface")
+        self.root.rowconfigure(0, minsize=200, weight=1)
+        self.root.columnconfigure(1, minsize=200, weight=1)
 
         # Build the text pane, but button pane, and the slider pane
-        self.txt_edit = tk.Text(self.window)
+        self.txt_edit = tk.Text(self.root)
         self.txt_edit.grid(row=0, column=1, sticky="nsew")
         
-        self.fr_sidebar = tk.Frame(self.window, relief=tk.RAISED, bd=2)
+        self.fr_sidebar = tk.Frame(self.root, relief=tk.RAISED, bd=2)
         self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
             foreground=self.color_scheme['secondary_normal'],
             width=10,
@@ -269,8 +321,8 @@ class PressureControlGui:
 
         self.init_control_editor(config)
 
-        self.window.protocol("WM_DELETE_WINDOW", self.on_window_close)
-        self.window.mainloop()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
+        self.root.mainloop()
 
 
     def init_control_editor(self, config):
@@ -287,7 +339,7 @@ class PressureControlGui:
             command=self.save_config_file,
         )
         #btn = ttk.Button(fr_buttons, text = 'Exit',
-        #                command = self.window.destroy,
+        #                command = self.root.destroy,
         #                width=10)
 
         button.grid(row=1, column=0, sticky="ew", padx=5)
@@ -302,23 +354,23 @@ class PressureControlGui:
         self.fr_send_btns.grid(row=2, column=0, sticky="ns", pady=20)
 
         button = ttk.Button(self.fr_send_btns,
-            text="Send To Controller",
+            text="Send Config",
             command=self.send_config,
         )
         button.grid(row=0, column=1, sticky="ew", padx=5)
 
         button2 = ttk.Button(self.fr_send_btns,
-            text="Open Pressure Control",
+            text="Open Sliders",
             command=self.init_pressure_editor,
         )
         button2.grid(row=0, column=2, sticky="ew", padx=5)
 
-        button3 = ttk.Button(self.fr_send_btns,
-            text="Connect",
-            command=self.connect_to_controller,
+        self.connect_btn = ttk.Button(self.fr_send_btns,
+            text="Connect Controller",
+            command=self.get_serial_setup,
         )
 
-        button3.grid(row=0, column=0, sticky="ew", padx=5)
+        self.connect_btn.grid(row=0, column=0, sticky="ew", padx=5)
 
 
     def del_control_sender(self):
@@ -498,7 +550,7 @@ class PressureControlGui:
     def on_window_close(self):
         if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.shutdown()
-            self.window.destroy()
+            self.root.destroy()
             
 
     def shutdown(self):
