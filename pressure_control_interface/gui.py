@@ -31,12 +31,14 @@ class popupWindow(object):
             comm_options=self.get_ports()
         if hw_options is None:
             hw_options = []
+        baud_options = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000]
         top=self.top=tk.Toplevel(master)
         top.title('Serial Config')
         self.fr = tk.Frame(top, bd=2)
         self.fr.pack()
         self.comvar = tk.StringVar()
         self.hwvar = tk.StringVar()
+        self.baudvar = tk.StringVar()
         self.l=tk.Label(self.fr, text='Choose a Device:', width=30)
         self.l.grid(row=0, column=0, sticky='ew', pady=5, padx=10)
 
@@ -44,6 +46,8 @@ class popupWindow(object):
         self.e.grid(row=1, column=0, sticky='ew', pady=5, padx=10)
         self.e=ttk.OptionMenu(self.fr, self.comvar, comm_options[0], *comm_options)
         self.e.grid(row=2, column=0, sticky='ew', pady=5, padx=10)
+        self.e=ttk.OptionMenu(self.fr, self.baudvar, 115200, *baud_options)
+        self.e.grid(row=3, column=0, sticky='ew', pady=5, padx=10)
 
         self.b=ttk.Button(self.fr,text='Ok',command=self.cleanup, width=30)
         self.b.grid(row=99, column=0, sticky='ew', pady=5, padx=10)
@@ -56,8 +60,9 @@ class popupWindow(object):
         return comports
 
     def cleanup(self):
-        self.comport=self.comvar.get()
-        self.hardware_setup = self.hwvar.get()
+        self.comports=[self.comvar.get()]
+        self.baudrate=self.baudvar.get()
+        self.hw_profile = self.hwvar.get()
         self.top.destroy()
 
 
@@ -79,9 +84,12 @@ class PressureControlGui:
 
 
 
-    def connect_to_controller(self):
+    def connect_to_controller(self, hw_profile=None, devices=None):
         self.ctrlp = CommHandler()
-        self.ctrlp.read_serial_settings()
+        if hw_profile is None or devices is None:
+            self.ctrlp.read_serial_settings()
+        else:
+            self.ctrlp.set_serial_settings(hw_profile=hw_profile,devices=devices)
         self.ctrlp.initialize()
         time.sleep(2.0)
         
@@ -292,10 +300,11 @@ class PressureControlGui:
         self.connect_btn['state']='disabled'
         self.w=popupWindow(self.root, hw_options=self.hw_options)
         self.root.wait_window(self.w.top)
-        print(self.w.hardware_setup)
-        print(self.w.comport)
+        print(self.w.hw_profile)
+        print(self.w.baudrate)
+        print(self.w.comports)
         self.connect_btn['state']='normal'
-        #self.connect_to_controller()
+        self.connect_to_controller(hw_profile=self.w.hw_profile, devices=self.w.comports,)
 
 
     def init_gui(self, config):

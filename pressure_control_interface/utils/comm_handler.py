@@ -182,13 +182,25 @@ class CommHandler:
 
 
     # Set serial settings directly
-    def get_serial_settings(self):
-        return self.serial_settings
+    def set_serial_settings(self, settings=None, hw_profile=None, devices=None):
+        if settings is None:
+            if hw_profile is not None and devices is not None:
+                file_path = os.path.dirname(os.path.realpath(__file__))
+                hw_fullfile=os.path.join(file_path,"..","config","hardware",hw_profile)
+                with open(hw_fullfile) as f:
+                    # use safe_load instead of load
+                    settings = yaml.safe_load(f)
+
+                for idx, obj in enumerate(settings):
+                    obj['devname'] = devices[idx]
+        
+        self.serial_settings = settings
+        return settings
 
 
     # Set serial settings directly
-    def set_serial_settings(self, serial_settings):
-        self.serial_settings=serial_settings
+    def get_serial_settings(self):
+        return self.serial_settings
 
 
     # Send commands out
