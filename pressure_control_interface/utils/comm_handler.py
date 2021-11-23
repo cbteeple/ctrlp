@@ -177,6 +177,9 @@ class CommHandler:
         for idx, obj in enumerate(serial_settings):
             obj['devname'] = devnames[idx]
 
+            if obj.get('type', None) is None:
+                obj['type'] = 'pressure'
+
         self.serial_settings = serial_settings
         return serial_settings
 
@@ -193,6 +196,9 @@ class CommHandler:
 
                 for idx, obj in enumerate(settings):
                     obj['devname'] = devices[idx]
+
+                    if obj.get('type', None) is None:
+                        obj['type'] = 'pressure'
         
         self.serial_settings = settings
         return settings
@@ -216,7 +222,7 @@ class CommHandler:
             
 
 
-        print(cmd, len(cmd))
+        #print(cmd, len(cmd))
 
         for ser, cmd_curr in zip(self.s,cmd):
             if cmd_curr is not None:

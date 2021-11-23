@@ -25,29 +25,25 @@ def _from_rgb(rgb):
 
 
 
-class popupWindow(object):
-    def __init__(self,master, comm_options=None, hw_options=None):
-        if comm_options is None:
-            comm_options=self.get_ports()
-        if hw_options is None:
-            hw_options = []
-        baud_options = [110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000]
+class CommConfig(object):
+    def __init__(self,master, hw_path, hw_options):
+
+        self.hw_path=hw_path
+        hw_options.insert(0,"< Choose >")
+        self.num_devices=0
+        
         top=self.top=tk.Toplevel(master)
         top.title('Serial Config')
         self.fr = tk.Frame(top, bd=2)
         self.fr.pack()
-        self.comvar = tk.StringVar()
         self.hwvar = tk.StringVar()
-        self.baudvar = tk.StringVar()
-        self.l=tk.Label(self.fr, text='Choose a Device:', width=30)
+        self.l=tk.Label(self.fr, text='Hardware Profile:', width=30)
         self.l.grid(row=0, column=0, sticky='ew', pady=5, padx=10)
 
-        self.e=ttk.OptionMenu(self.fr, self.hwvar, hw_options[0], *hw_options)
-        self.e.grid(row=1, column=0, sticky='ew', pady=5, padx=10)
-        self.e=ttk.OptionMenu(self.fr, self.comvar, comm_options[0], *comm_options)
-        self.e.grid(row=2, column=0, sticky='ew', pady=5, padx=10)
-        self.e=ttk.OptionMenu(self.fr, self.baudvar, 115200, *baud_options)
-        self.e.grid(row=3, column=0, sticky='ew', pady=5, padx=10)
+        self.e1=ttk.OptionMenu(self.fr, self.hwvar, hw_options[0], *hw_options, command=self.update_hw_config)
+        self.e1.grid(row=1, column=0, sticky='ew', pady=5, padx=10)
+        
+        self.update_port_switchers()
 
         self.b=ttk.Button(self.fr,text='Ok',command=self.cleanup, width=30)
         self.b.grid(row=99, column=0, sticky='ew', pady=5, padx=10)
@@ -55,13 +51,54 @@ class popupWindow(object):
     def get_ports(self):
         ports = list(list_ports.comports())
         comports = []
+        comport_names = []
         for p in ports:
             comports.append(p.device)
-        return comports
+            comport_names.append(p)
+        comports.insert(0,"< Choose >")
+        comport_names.insert(0,"< Choose >")
+        return comports, comport_names
+
+    def update_port_list(self, event):
+        comports, _ = self.get_ports()
+
+        for i, switcher in enumerate(self.port_switchers):
+            switcher["menu"].delete(0, "end")
+            for port in comports:
+                switcher["menu"].add_command(label=port, 
+                             command=lambda value=port, i=i: self.comvar[i].set(value))
+            
+
+    def update_hw_config(self, val):
+        path = os.path.join(self.hw_path,self.hwvar.get())
+        serial_settings = load_yaml(path)
+        self.num_devices=len(serial_settings)
+        self.update_port_switchers()
+
+
+    def update_port_switchers(self):
+        if self.num_devices>0:
+            self.l2=tk.Label(self.fr, text='', width=30)
+            self.l2.grid(row=2, column=0, sticky='ew', pady=5, padx=10)
+            self.l3=tk.Label(self.fr, text='Serial Devices:', width=30)
+            self.l3.grid(row=3, column=0, sticky='ew', pady=5, padx=10)
+            self.port_switchers=[]
+            self.comvar = []
+            self.fr_port = tk.Frame(self.fr, bd=2)
+            self.fr_port.grid(row=4, column=0, sticky='ew', pady=5, padx=10)
+
+            for i in range(self.num_devices):
+                var = tk.StringVar()
+                self.comvar.append(var)
+                p1=ttk.OptionMenu(self.fr_port, var, "< Choose >", *["< Choose >"])
+                p1.grid(row=0, column=i, sticky='ns', pady=5, padx=10)
+                p1.bind("<Enter>", self.update_port_list)
+                self.port_switchers.append(p1)
+            
+            self.update_port_list(None)
 
     def cleanup(self):
-        self.comports=[self.comvar.get()]
-        self.baudrate=self.baudvar.get()
+        self.comports=[self.comvar[i].get() for i in range(len(self.comvar))]
         self.hw_profile = self.hwvar.get()
         self.top.destroy()
 
@@ -85,12 +122,21 @@ class PressureControlGui:
 
 
     def connect_to_controller(self, hw_profile=None, devices=None):
+        if self.ctrlp is not None:
+            self.run_read_thread = False
+            self.ctrlp.shutdown()
+            del self.ctrlp
+
         self.ctrlp = CommHandler()
         if hw_profile is None or devices is None:
             self.ctrlp.read_serial_settings()
         else:
             self.ctrlp.set_serial_settings(hw_profile=hw_profile,devices=devices)
         self.ctrlp.initialize()
+        self.channel_types=[]
+        for i in range(len(self.ctrlp.serial_settings)):
+            num_channels = self.ctrlp.serial_settings[i]['num_channels']
+            self.channel_types.extend([self.ctrlp.serial_settings[i]['type']]*num_channels)
         time.sleep(2.0)
         
         self.run_read_thread = True
@@ -100,8 +146,8 @@ class PressureControlGui:
         self.ctrlp.send_command("echo",1)
         self.ctrlp.send_command("speed",200)
         self.ctrlp.send_command("cont",1)
-        #self.ctrlp.send_command("echo",0)
-        self.ctrlp.send_command("on",None)
+        self.ctrlp.send_command("echo",0)
+        self.ctrlp.send_command("off",None)
 
 
     def start_pressure_thread(self):
@@ -118,8 +164,8 @@ class PressureControlGui:
     def load_settings(self, filename="default.yaml"):
         self.settings = load_yaml(os.path.join(self.config_folder,'gui',filename))
 
-        hw_path = os.path.join(self.config_folder,'hardware')
-        self.hw_options = [f for f in os.listdir(hw_path) if os.path.isfile(os.path.join(hw_path, f))]
+        self.hw_path = os.path.join(self.config_folder,'hardware')
+        self.hw_options = [f for f in os.listdir(self.hw_path) if os.path.isfile(os.path.join(self.hw_path, f))]
 
         self.file_types = self.settings['file_types']
         self.color_scheme = self.settings['color_scheme']
@@ -257,6 +303,33 @@ class PressureControlGui:
             pass
 
 
+    def speed_changed(self, slider_num):
+        try:
+            #self.channels[slider_num][1].set(val)
+            scalevar = self.speed_vals[slider_num]
+            scale_value=round(scalevar.get(), 2)
+            scalevar.set(scale_value)
+
+            val_to_send=[]
+            for val in self.speed_vals:
+                if val is not None:
+                    val_to_send.append(val.get())
+                else:
+                    val_to_send.append(0)
+
+            if self.ctrlp:
+                self.ctrlp.send_command("speed",val_to_send)
+
+            #if self.livesend.get():
+            #    self.set_pressure()
+
+            #print(slider_num, scale_value)
+        except tk.TclError:
+            pass
+        except IndexError:
+            pass
+
+
     def _set_pressure(self):
         press = copy.deepcopy(self.curr_pressures)
         press.insert(0, self.transition_speed.get())
@@ -298,10 +371,9 @@ class PressureControlGui:
 
     def get_serial_setup(self):
         self.connect_btn['state']='disabled'
-        self.w=popupWindow(self.root, hw_options=self.hw_options)
+        self.w=CommConfig(self.root, hw_path=self.hw_path, hw_options=self.hw_options)
         self.root.wait_window(self.w.top)
         print(self.w.hw_profile)
-        print(self.w.baudrate)
         print(self.w.comports)
         self.connect_btn['state']='normal'
         self.connect_to_controller(hw_profile=self.w.hw_profile, devices=self.w.comports,)
@@ -475,7 +547,7 @@ class PressureControlGui:
 
 
         self.live_data = tk.IntVar()
-        self.live_data.set(1)
+        self.live_data.set(0)
         cb = lambda name, index, val: self.set_data_stream()
         self.live_data.trace("w",cb)
         button3 = ttk.Checkbutton(self.fr_slider_btns,
@@ -494,6 +566,7 @@ class PressureControlGui:
 
     def init_sliders(self, fr_sliders):
         self.channels=[]
+        self.speed_vals=[]
         for i in range(self.num_channels):
             # Get current info
             curr_max = self.config['max_pressure'][i]
@@ -539,6 +612,7 @@ class PressureControlGui:
                 )
             spin.grid(row=4, column=i, sticky="ew", padx=5, pady=10)
 
+
             # Add max and min labels
             label_title = tk.Label(fr_sliders, text="%d"%(i+1), width=2, font=('Arial', 20, 'bold'), state=curr_state)
             label_max = tk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, font=('Arial', 10), state=curr_state)
@@ -546,6 +620,25 @@ class PressureControlGui:
             label_title.grid(row=0, column=i, sticky="s", pady=0)
             label_max.grid(row=1, column=i, sticky="s", pady=0)
             label_min.grid(row=3, column=i, sticky="n", pady=0)
+
+
+            if self.channel_types[i]=="dynamixel":
+                speedval=tk.DoubleVar()
+                speedval.set(200)
+                cb = lambda name, index, val, i=i: self.speed_changed(i)
+                speedval.trace("w",cb)
+                speed = ttk.Spinbox(fr_sliders,
+                    width=5,
+                    from_=0, to=1023, increment=1,
+                    textvariable=speedval, state=curr_state,
+                    font=('Arial', 12),
+                    )
+                speed.grid(row=5, column=i, sticky="ew", padx=5, pady=10)
+                self.speed_vals.append(speedval)
+            else:
+                self.speed_vals.append(None)
+
+            
 
             
 

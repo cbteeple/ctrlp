@@ -334,19 +334,31 @@ commands:
   config_name: speed
   default_value: null
   description: 'Set the motor speed'
-  num_args: num_channels
-  split_how: null
+  num_args:
+    min: 1
+    max: 'num_channels'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'torque'
   config_name: torque
   default_value: null
   description: 'Set the motor torque'
-  num_args: num_channels
-  split_how: null
+  num_args:
+    min: 1
+    max: 'num_channels'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
 
 - cmd: 'cont'
   config_name: cont
   default_value: null
   description: 'Set continuous grasping'
-  num_args: num_channels
-  split_how: null
+  num_args:
+    min: 1
+    max: 'num_channels'
+  split_how:
+    single_arg: null
+    multi_arg:  'channel'
