@@ -28,24 +28,34 @@ class CommandValidator:
 
     def generate_command_list(self):
         cmd_list = []
+        config_name_list = []
         for cmd in self.cmd_spec['commands']:
             cmd_list.append(cmd['cmd'])
+            config_name_list.append(cmd['config_name'])
 
             cmd['num_args'] = self.get_num_args(cmd)
             
         self.cmd_list = cmd_list
+        self.config_name_list = config_name_list
         self.cmd_echo     = self.cmd_spec['echo']
         self.cmd_settings = self.cmd_spec['settings']
         self.cmd_data = self.cmd_spec['data']
         self.cmd_data_types = self.cmd_spec['data']['types'].keys()
 
 
-    def get_spec(self, cmd):
-        cmd = cmd.lower()
-        if not cmd in self.cmd_list:
-            return None
+    def get_spec(self, cmd, by_config_name=False):
+        if by_config_name:
+            if not cmd in self.config_name_list:
+                return None
 
-        cmd_idx = self.cmd_list.index(cmd)
+            cmd_idx = self.config_name_list.index(cmd)
+
+        else:
+            cmd = cmd.lower()
+            if not cmd in self.cmd_list:
+                return None
+
+            cmd_idx = self.cmd_list.index(cmd)
 
         curr_cmd_spec = self.cmd_spec['commands'][cmd_idx]
 
@@ -77,7 +87,22 @@ class CommandValidator:
         return num_args
 
 
+    # Build a command string
+    def build_cmd_string(self, command, values=None, format="%0.2f"):
+        txt = command
+        if values is not None:
+            #print("%s \t %s"%(command, values))
+            if isinstance(values, list) or isinstance(values, tuple):
+                if values:
+                    for val in values:
+                        txt+= self.cmd_settings['delimeter']+format%(val)
+            else:
+                txt+=self.cmd_settings['delimeter']+format%(values)
+        cmd = txt+self.cmd_settings['ending']
+        return cmd
 
+
+    # Process a line of incomming data
     def process_line(self, line_in):
 
         output = None

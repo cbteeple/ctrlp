@@ -12,20 +12,6 @@ from multiprocessing import Process
 from validate_commands import CommandValidator
 
 
-def build_cmd_string(command, values=None, format="%0.3f"):
-    txt = command
-    if values is not None:
-        #print("%s \t %s"%(command, values))
-        if isinstance(values, list) or isinstance(values, tuple):
-            if values:
-                for val in values:
-                    txt+= ";"+format%(val)
-        else:
-            txt+=";"+format%(values)
-    cmd = txt+'\n'
-    return cmd
-
-
 class CommandHandler:
     def __init__(self, comm_list):
         self.comm_list = comm_list
@@ -214,11 +200,11 @@ class CommHandler:
         cmd_obj = self.command_handler.split_command(command, values)
 
         cmd = []
-        for cmd_curr in cmd_obj:
+        for cmd_curr, validator in zip(cmd_obj, self.validator):
             if cmd_curr is None:
                 cmd.append(None)
             else:
-                cmd.append(build_cmd_string(cmd_curr['command'], cmd_curr['values'], format) )
+                cmd.append(validator.build_cmd_string(cmd_curr['command'], cmd_curr['values'], format) )
             
 
 
