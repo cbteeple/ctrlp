@@ -2,8 +2,10 @@
   num_channels: 8
   cmd_spec: '2.0'
   type: "pressure"
+  cmd_format: "%0.2f"
   
 - baudrate: 9600 #2000000
   num_channels: 1
   cmd_spec: '2.2'
   type: "dynamixel"
+  cmd_format: "%0.2f"

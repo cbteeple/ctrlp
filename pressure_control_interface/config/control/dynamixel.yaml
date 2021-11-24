@@ -26,4 +26,5 @@ min_pressure: -150
 echo: False
 
 gui:
-  groups: [[0,1], [2,3]]
+  groups: [[0,1], [2,3], [4]]
+
