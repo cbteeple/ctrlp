@@ -6,12 +6,14 @@ import sys
 import copy
 import time
 from serial.tools import list_ports
+import serial
 #import matplotlib.pyplot as plt
 import seaborn as sns
 import threading
 
 sys.path.insert(1, 'utils')
 from comm_handler import CommHandler
+from config_handler import ConfigHandler
 from get_files import get_save_path, load_yaml, save_yaml
 
 
@@ -27,26 +29,31 @@ def _from_rgb(rgb):
 
 class CommConfig(object):
     def __init__(self,master, hw_path, hw_options):
+        self.default_option = "< Choose >"
+
+        hw_options_cp = copy.deepcopy(hw_options)
 
         self.hw_path=hw_path
-        hw_options.insert(0,"< Choose >")
+        hw_options_cp.insert(0,self.default_option)
         self.num_devices=0
         
         top=self.top=tk.Toplevel(master)
         top.title('Serial Config')
+        top.protocol("WM_DELETE_WINDOW", self.cleanup)
         self.fr = tk.Frame(top, bd=2)
         self.fr.pack()
         self.hwvar = tk.StringVar()
         self.l=tk.Label(self.fr, text='Hardware Profile:', width=30)
         self.l.grid(row=0, column=0, sticky='ew', pady=5, padx=10)
 
-        self.e1=ttk.OptionMenu(self.fr, self.hwvar, hw_options[0], *hw_options, command=self.update_hw_config)
+        self.e1=ttk.OptionMenu(self.fr, self.hwvar, hw_options_cp[0], *hw_options_cp, command=self.update_hw_config)
         self.e1.grid(row=1, column=0, sticky='ew', pady=5, padx=10)
         
         self.update_port_switchers()
 
-        self.b=ttk.Button(self.fr,text='Ok',command=self.cleanup, width=30)
-        self.b.grid(row=99, column=0, sticky='ew', pady=5, padx=10)
+        self.ok_btn=ttk.Button(self.fr,text='Ok',command=self.cleanup, width=30)
+        self.ok_btn.grid(row=99, column=0, sticky='ew', pady=5, padx=10)
+        self.ok_btn.configure(state='disabled')
 
     def get_ports(self):
         ports = list(list_ports.comports())
@@ -55,8 +62,8 @@ class CommConfig(object):
         for p in ports:
             comports.append(p.device)
             comport_names.append(p)
-        comports.insert(0,"< Choose >")
-        comport_names.insert(0,"< Choose >")
+        comports.insert(0,self.default_option)
+        comport_names.insert(0,self.default_option)
         return comports, comport_names
 
     def update_port_list(self, event):
@@ -70,27 +77,56 @@ class CommConfig(object):
             
 
     def update_hw_config(self, val):
-        path = os.path.join(self.hw_path,self.hwvar.get())
-        serial_settings = load_yaml(path)
-        self.num_devices=len(serial_settings)
+        hw_profile=self.hwvar.get()
+        if hw_profile != self.default_option:
+            path = os.path.join(self.hw_path,hw_profile)
+            serial_settings = load_yaml(path)
+            self.num_devices=len(serial_settings)
+        else:
+            self.num_devices=0
         self.update_port_switchers()
 
 
+    def del_port_switchers(self):
+        try:
+            self.l2.destroy()
+            self.l3.destroy()
+            self.fr_port.destroy()
+        except:
+            pass
+
+    def validate_comports(self):
+        if len(self.comvar)==0:
+            self.ok_btn.configure(state='disabled')
+
+        else:
+            for var in self.comvar:
+                if var.get() == self.default_option:
+                    self.ok_btn.configure(state='disabled')
+                    return
+
+            self.ok_btn.configure(state='normal')
+
+
+
     def update_port_switchers(self):
+        self.del_port_switchers()
+        self.port_switchers=[]
+        self.comvar = []
         if self.num_devices>0:
             self.l2=tk.Label(self.fr, text='', width=30)
             self.l2.grid(row=2, column=0, sticky='ew', pady=5, padx=10)
             self.l3=tk.Label(self.fr, text='Serial Devices:', width=30)
             self.l3.grid(row=3, column=0, sticky='ew', pady=5, padx=10)
-            self.port_switchers=[]
-            self.comvar = []
             self.fr_port = tk.Frame(self.fr, bd=2)
             self.fr_port.grid(row=4, column=0, sticky='ew', pady=5, padx=10)
 
             for i in range(self.num_devices):
                 var = tk.StringVar()
+                cb = lambda name, index, val: self.validate_comports()
+                var.trace("w",cb)
                 self.comvar.append(var)
-                p1=ttk.OptionMenu(self.fr_port, var, "< Choose >", *["< Choose >"])
+                p1=ttk.OptionMenu(self.fr_port, var, self.default_option, *[self.default_option])
                 p1.grid(row=0, column=i, sticky='ns', pady=5, padx=10)
                 p1.bind("<Enter>", self.update_port_list)
                 self.port_switchers.append(p1)
@@ -98,8 +134,20 @@ class CommConfig(object):
             self.update_port_list(None)
 
     def cleanup(self):
-        self.comports=[self.comvar[i].get() for i in range(len(self.comvar))]
-        self.hw_profile = self.hwvar.get()
+        comports = [self.comvar[i].get() for i in range(len(self.comvar))]
+        self.comports=[]
+        for comport in comports:
+            if comport == self.default_option:
+                self.comports=None
+                break
+            else:
+                self.comports.append(comport)
+
+        hw_profile = self.hwvar.get()
+        if hw_profile == self.default_option:
+            hw_profile = None
+        self.hw_profile = hw_profile
+        
         self.top.destroy()
 
 
@@ -133,6 +181,8 @@ class PressureControlGui:
         else:
             self.ctrlp.set_serial_settings(hw_profile=hw_profile,devices=devices)
         self.ctrlp.initialize()
+        self.config_handler = ConfigHandler(self.ctrlp.command_handler)
+        self.load_config_file()
         self.channel_types=[]
         for i in range(len(self.ctrlp.serial_settings)):
             num_channels = self.ctrlp.serial_settings[i]['num_channels']
@@ -143,11 +193,13 @@ class PressureControlGui:
         self.read_thread = threading.Thread(target=self.read_data)
         self.read_thread.start()
 
-        self.ctrlp.send_command("echo",1)
-        self.ctrlp.send_command("speed",200)
-        self.ctrlp.send_command("cont",1)
-        self.ctrlp.send_command("echo",0)
-        self.ctrlp.send_command("off",None)
+        self.init_control_editor()
+
+        #self.ctrlp.send_command("echo",1)
+        #self.ctrlp.send_command("speed",200)
+        #self.ctrlp.send_command("cont",1)
+        #self.ctrlp.send_command("echo",0)
+        #self.ctrlp.send_command("off",None)
 
 
     def start_pressure_thread(self):
@@ -191,48 +243,23 @@ class PressureControlGui:
 
 
     def parse_config(self, config):
-        self.config={}
-
         self.num_channels = config.get("channels", {}).get('num_channels', None)
         self.curr_pressures = [0.0]*self.num_channels
-
-        if isinstance(config, dict):
-            for key in config:
-                if key == "max_pressure" or key == "min_pressure":
-                    self.config[key]=self.expand_pressure_limits(config[key])
-                elif key == "PID":
-                    self.config[key]=self.expand_pid(config[key])
-                else:
-                    self.config[key] = config[key]
-
-
-    def expand_pressure_limits(self, value):
-        if isinstance(value, list):
-            return value
-        else:
-            if self.num_channels is not None:
-                return [value]*self.num_channels
-            else:
-                return []
-
-
-    def expand_pid(self, value):
-        all_equal = value.get('all_equal', True)
-        values = value.get('values', True)
-        if all_equal:
-            return [values]*self.num_channels
-        else:
-            return values
+        self.config=self.config_handler.parse_config(config)
 
 
     def send_config(self):
         self.status_bar.config(text ='Sending config...')
-        print(self.config)        
+        commands = self.config_handler.get_commands()
+        for command in commands:
+            print(command) 
+            if self.ctrlp:
+                self.ctrlp.send_command(command['cmd'],command['args'])
+                time.sleep(0.1)    
         self.status_bar.config(text ='Sent config!')
 
 
     def open_config_file(self):
-        """Open a file for editing."""
         filepath = fdialog.askopenfilename(
             filetypes=self.file_types,
             initialdir=self.curr_config_file['dirname'],
@@ -240,6 +267,20 @@ class PressureControlGui:
         )
         if not filepath:
             return
+        self.curr_config_file['basename'] = os.path.basename(filepath)
+        self.curr_config_file['dirname'] = os.path.dirname(filepath)
+        self.load_config_file()
+
+    def load_config_file(self):
+        """Open a file for editing."""
+        if self.curr_config_file['dirname'] is None or self.curr_config_file['basename'] is None:
+            return
+
+        filepath = os.path.join(
+            self.curr_config_file['dirname'],
+            self.curr_config_file['basename']
+            )
+        
         new_config = False
         if filepath.endswith(".yaml"):
             new_config = self.get_config(filepath)
@@ -255,12 +296,16 @@ class PressureControlGui:
                 text = input_file.read()
                 self.txt_edit.insert(tk.END, text)
             self.root.title(f"Pressure Control Interface | Config Editor - {basename}")
+
+            self.init_pressure_editor()
+
+            self.open_sliders_btn.configure(state="normal")
         else:
+            self.open_sliders_btn.configure(state="disabled")
             self.del_control_sender()
 
-    def save_config_file(self):
-        """Save the current file as a new file."""
 
+    def save_config_file_as(self):
         filepath = fdialog.asksaveasfilename(
             defaultextension="txt",
             filetypes=self.file_types,
@@ -269,13 +314,24 @@ class PressureControlGui:
         )
         if not filepath:
             return
+
+        self.curr_config_file['basename'] = os.path.basename(filepath)
+        self.curr_config_file['dirname'] = os.path.dirname(filepath)
+
+    def save_config_file(self):
+        """Save the current file as a new file."""
+        filepath = os.path.join(
+            self.curr_config_file['dirname'],
+            self.curr_config_file['basename']
+            )
+        
         with open(filepath, "w") as output_file:
             text = self.txt_edit.get(1.0, tk.END)
             output_file.write(text)
         
-        self.curr_config_file['basename'] = os.path.basename(filepath)
-        self.curr_config_file['dirname'] = os.path.dirname(filepath)
+        
         self.root.title(f"Pressure Control Interface | Config Editor - {os.path.basename(filepath)}")
+        self.load_config_file()
 
 
     def slider_changed(self, slider_num):
@@ -355,10 +411,13 @@ class PressureControlGui:
 
 
     def read_data(self):
-        while self.run_read_thread:
-            line=self.ctrlp.read_all()
-            if line:
-                print(line)
+        try:
+            while self.run_read_thread:
+                line=self.ctrlp.read_all()
+                if line:
+                    print(line)
+        except serial.serialutil.SerialException:
+            pass
 
     
     def set_pressure_threaded(self):
@@ -373,13 +432,20 @@ class PressureControlGui:
         self.connect_btn['state']='disabled'
         self.w=CommConfig(self.root, hw_path=self.hw_path, hw_options=self.hw_options)
         self.root.wait_window(self.w.top)
-        print(self.w.hw_profile)
-        print(self.w.comports)
         self.connect_btn['state']='normal'
+
+        if (self.w.hw_profile is None) or (self.w.comports is None):
+            self.status_bar.config(text ='No Devices Connected')
+            return
+
+        #print(self.w.hw_profile)
+        #print(self.w.comports)
+        
         self.connect_to_controller(hw_profile=self.w.hw_profile, devices=self.w.comports,)
+        self.status_bar.config(text ='Controller Connected!')
 
 
-    def init_gui(self, config):
+    def init_gui(self):
         # Make a new window
         self.root = tk.Tk()
         self.root.title("Pressure Control Interface")
@@ -389,6 +455,7 @@ class PressureControlGui:
         # Build the text pane, but button pane, and the slider pane
         self.txt_edit = tk.Text(self.root)
         self.txt_edit.grid(row=0, column=1, sticky="nsew")
+        #self.txt_edit.bind('<KeyRelease>', self.update_config())
         
         self.fr_sidebar = tk.Frame(self.root, relief=tk.RAISED, bd=2)
         self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
@@ -400,51 +467,52 @@ class PressureControlGui:
         self.fr_sidebar.grid(row=0, column=0, sticky="ns")
         self.status_bar.grid(row=0, column=0, columnspan=3, sticky="ew", padx=5, pady=5)
 
-        self.init_control_editor(config)
+        #self.init_control_editor()
+        self.init_control_sender()
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
         self.root.mainloop()
 
 
-    def init_control_editor(self, config):
+    def init_control_editor(self):
         fr_buttons = tk.Frame(self.fr_sidebar,  bd=2)
 
         button = ttk.Button(fr_buttons,
             text="Open Config",
-            width=20,
             command=self.open_config_file,
         )
         button2 = ttk.Button(fr_buttons,
             text="Save Config",
-            width=20,
             command=self.save_config_file,
         )
-        #btn = ttk.Button(fr_buttons, text = 'Exit',
-        #                command = self.root.destroy,
-        #                width=10)
-
+        button3 = ttk.Button(fr_buttons,
+            text="Save Config As",
+            command=self.save_config_file_as,
+        )
+        button4 = ttk.Button(fr_buttons,
+            text="Send Config",
+            command=self.send_config,
+        )
         button.grid(row=1, column=0, sticky="ew", padx=5)
         button2.grid(row=1, column=1, sticky="ew", padx=5)
+        button3.grid(row=1, column=2, sticky="ew", padx=5)
+        button4.grid(row=1, column=3, sticky="ew", padx=5)
         #btn.grid(row=1, column=2, sticky="ew", padx=5)
 
-        fr_buttons.grid(row=1, column=0, sticky="ns")
+        fr_buttons.grid(row=2, column=0, sticky="ns")
 
 
     def init_control_sender(self):
         self.fr_send_btns = tk.Frame(self.fr_sidebar, bd=2)
-        self.fr_send_btns.grid(row=2, column=0, sticky="ns", pady=20)
+        self.fr_send_btns.grid(row=1, column=0, sticky="ns", pady=20)
 
-        button = ttk.Button(self.fr_send_btns,
-            text="Send Config",
-            command=self.send_config,
-        )
-        button.grid(row=0, column=1, sticky="ew", padx=5)
 
-        button2 = ttk.Button(self.fr_send_btns,
+        self.open_sliders_btn = ttk.Button(self.fr_send_btns,
             text="Open Sliders",
             command=self.init_pressure_editor,
         )
-        button2.grid(row=0, column=2, sticky="ew", padx=5)
+        self.open_sliders_btn.grid(row=0, column=2, sticky="ew", padx=5)
+        self.open_sliders_btn.configure(state="disabled")
 
         self.connect_btn = ttk.Button(self.fr_send_btns,
             text="Connect Controller",
@@ -659,7 +727,7 @@ class PressureControlGui:
         try:
             self.run_read_thread = False
         except:
-            pass
+            raise
 
 
 if __name__ == "__main__":
@@ -667,6 +735,6 @@ if __name__ == "__main__":
     try:
         if len(sys.argv)==2:
             gui.load_settings(sys.argv[1])
-        gui.init_gui({})
+        gui.init_gui()
     except KeyboardInterrupt:
         gui.on_window_close()

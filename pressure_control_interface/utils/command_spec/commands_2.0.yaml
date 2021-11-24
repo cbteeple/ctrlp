@@ -162,7 +162,7 @@ commands:
 
 # Controller settings
 - cmd: 'pid'
-  config_name: pid/values
+  config_name: PID/values
   default_value: 0
   description: 'Set the pid values for a particular channel'
   num_args: 4
@@ -182,7 +182,7 @@ commands:
     multi_arg:  'channel'
 
 - cmd: 'intstart'
-  config_name: integrator_start
+  config_name: PID/integrator_start
   default_value: 0.5
   description: 'Start using the integrator when measured pressure is within this amount of the setpoint (in pressure units)'
   num_args: 1

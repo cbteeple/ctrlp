@@ -10,6 +10,8 @@ from multiprocessing import Process
 
 
 from validate_commands import CommandValidator
+from helper_utils import all_equal
+
 
 
 class CommandHandler:
@@ -26,9 +28,33 @@ class CommandHandler:
             self.validators.append(CommandValidator(settings["cmd_spec"], settings["num_channels"]))
 
 
-    def split_command(self, command, values, format="%0.3f"):
-        commands_out = []
+    def get_cmd_spec(self, cmd, by_config_name=False):
+        commands=[]
+        for validator in self.validators:
+            command = validator.get_spec(cmd, by_config_name)
+            commands.append(command)
 
+        return commands
+
+    def get_cmd_name(self, config_name):
+        commands = self.get_cmd_spec(config_name, by_config_name=True)
+        cmd_names=[]
+        for cmd in commands:
+            if cmd is not None:
+                cmd_names.append(cmd['cmd'])
+        
+        if len(cmd_names)==0:
+            return None
+        
+        if all_equal(cmd_names):
+            return cmd_names[0]
+        else:
+            raise ValueError('Multiple commands retrieved for the same config_name "%s". Resolve conflicts in command spec definitions.'%(config_name))
+
+
+
+    def split_command(self, command, values, format="%0.3f"):
+        commands_out=[]
         for idx,_ in enumerate(self.comm_list):
             spec = self.validators[idx].get_spec(command)
 
@@ -119,13 +145,13 @@ class CommHandler:
 
     def initialize(self, devname=None, baudrate=None, ser=None):
         if devname is not None and baudrate is not None:
-            self.s = [serial.Serial(devname,baudrate)]
+            self.s = [serial.Serial(devname,baudrate, timeout=0)]
         elif ser is not None:
             self.s = [ser]
         elif self.serial_settings is not None:
             self.s = []
             for settings in self.serial_settings:
-                self.s.append(serial.Serial(settings["devname"], settings["baudrate"]))
+                self.s.append(serial.Serial(settings["devname"], settings["baudrate"], timeout=0))
         else:
             self.s = None
             raise ValueError("CommHandler expects either a devname and baudrate, or and existing serial object")
