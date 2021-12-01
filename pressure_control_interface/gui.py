@@ -529,6 +529,7 @@ class PressureControlGui:
         self.connect_btn = ttk.Button(self.fr_send_btns,
             text="Connect Controller",
             command=self.get_serial_setup,
+            state='active',
         )
 
         self.connect_btn.grid(row=0, column=0, sticky="ew", padx=5)
@@ -730,7 +731,7 @@ class PressureControlGui:
 
 
     def on_window_close(self):
-        if ttk.messagebox.askokcancel("Quit", "Do you want to quit?"):
+        if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.shutdown()
             self.root.destroy()
             
