@@ -255,7 +255,9 @@ class PressureControlGui:
             print(command) 
             if self.ctrlp:
                 self.ctrlp.send_command(command['cmd'],command['args'])
-                time.sleep(0.1)    
+                time.sleep(0.1)
+
+        self.ctrlp.send_command('save',None) 
         self.status_bar.config(text ='Sent config!')
 
 
