@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+from ttkthemes import ThemedTk
 import tkinter.filedialog as fdialog
 import os
 import sys
@@ -25,6 +26,15 @@ def _from_rgb(rgb):
         rgb_int[i] = int(color*255)
     return "#%02x%02x%02x" % tuple(rgb_int)
 
+
+
+class Spinbox(ttk.Entry):
+
+    def __init__(self, master=None, **kw):
+
+        ttk.Entry.__init__(self, master, "ttk::spinbox", **kw)
+    def set(self, value):
+        self.tk.call(self._w, "set", value)
 
 
 class CommConfig(object):
@@ -449,7 +459,7 @@ class PressureControlGui:
 
     def init_gui(self):
         # Make a new window
-        self.root = tk.Tk()
+        self.root = ThemedTk(theme="breeze")#tk.Tk()
         self.root.title("Pressure Control Interface")
         self.root.rowconfigure(0, minsize=200, weight=1)
         self.root.columnconfigure(1, minsize=200, weight=1)
@@ -459,7 +469,7 @@ class PressureControlGui:
         self.txt_edit.grid(row=0, column=1, sticky="nsew")
         #self.txt_edit.bind('<KeyRelease>', self.update_config())
         
-        self.fr_sidebar = tk.Frame(self.root, relief=tk.RAISED, bd=2)
+        self.fr_sidebar = tk.Frame(self.root, bd=2,)
         self.status_bar = tk.Label(self.fr_sidebar, text="Hello!",
             foreground=self.color_scheme['secondary_normal'],
             width=10,
@@ -477,7 +487,7 @@ class PressureControlGui:
 
 
     def init_control_editor(self):
-        fr_buttons = tk.Frame(self.fr_sidebar,  bd=2)
+        fr_buttons = tk.Frame(self.fr_sidebar,  bd=2, )
 
         button = ttk.Button(fr_buttons,
             text="Open Config",
@@ -505,7 +515,7 @@ class PressureControlGui:
 
 
     def init_control_sender(self):
-        self.fr_send_btns = tk.Frame(self.fr_sidebar, bd=2)
+        self.fr_send_btns = tk.Frame(self.fr_sidebar, bd=2,)
         self.fr_send_btns.grid(row=1, column=0, sticky="ns", pady=20)
 
 
@@ -589,7 +599,7 @@ class PressureControlGui:
         self.transition_speed = tk.DoubleVar()
         self.transition_speed.set(self.config.get('transitions', 0.0))
         
-        self.fr_slider_btns = tk.Frame(self.fr_sidebar, bd=2)
+        self.fr_slider_btns = tk.Frame(self.fr_sidebar, bd=2, )
         self.fr_slider_btns.grid(row=99, column=0, sticky="ns", pady=5)
 
         button = ttk.Button(self.fr_slider_btns,
@@ -607,7 +617,7 @@ class PressureControlGui:
         button2.grid(row=0, column=1, sticky="ew", padx=5)
 
 
-        spin = ttk.Spinbox(self.fr_slider_btns,
+        spin = Spinbox(self.fr_slider_btns,
                 width=6,
                 from_=0.0, to=1000, increment=0.1,
                 textvariable=self.transition_speed,
@@ -674,7 +684,7 @@ class PressureControlGui:
             scale.grid(row=2, column=i, sticky="ew", padx=5)
 
             # Create the spinbox
-            spin = ttk.Spinbox(fr_sliders,
+            spin = Spinbox(fr_sliders,
                 width=5,
                 from_=curr_min, to=curr_max, increment=0.1,
                 textvariable=spinval, state=curr_state,
@@ -684,9 +694,9 @@ class PressureControlGui:
 
 
             # Add max and min labels
-            label_title = tk.Label(fr_sliders, text="%d"%(i+1), width=2, font=('Arial', 20, 'bold'), state=curr_state)
-            label_max = tk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, font=('Arial', 10), state=curr_state)
-            label_min = tk.Label(fr_sliders, text="%0.1f"%(curr_min), width=7, font=('Arial', 10), state=curr_state)
+            label_title = ttk.Label(fr_sliders, text="%d"%(i+1), width=2, font=('Arial', 20, 'bold'), state=curr_state)
+            label_max = ttk.Label(fr_sliders, text="%0.1f"%(curr_max), width=7, font=('Arial', 10), state=curr_state)
+            label_min = ttk.Label(fr_sliders, text="%0.1f"%(curr_min), width=7, font=('Arial', 10), state=curr_state)
             label_title.grid(row=0, column=i, sticky="s", pady=0)
             label_max.grid(row=1, column=i, sticky="s", pady=0)
             label_min.grid(row=3, column=i, sticky="n", pady=0)
@@ -697,7 +707,7 @@ class PressureControlGui:
                 speedval.set(200)
                 cb = lambda name, index, val, i=i: self.speed_changed(i)
                 speedval.trace("w",cb)
-                speed = ttk.Spinbox(fr_sliders,
+                speed = Spinbox(fr_sliders,
                     width=5,
                     from_=0, to=1023, increment=1,
                     textvariable=speedval, state=curr_state,
@@ -720,7 +730,7 @@ class PressureControlGui:
 
 
     def on_window_close(self):
-        if tk.messagebox.askokcancel("Quit", "Do you want to quit?"):
+        if ttk.messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.shutdown()
             self.root.destroy()
             
