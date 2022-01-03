@@ -13,7 +13,7 @@ class CommandValidator:
         self.num_channels = num_channels
 
         this_file = os.path.dirname(os.path.abspath(__file__))
-        command_spec_file = os.path.join(this_file,'command_spec', 'commands_'+cmd_spec_version+'.yaml')
+        command_spec_file = os.path.join(this_file,'..','..','command_spec', 'commands_'+cmd_spec_version+'.yaml')
 
         with open(command_spec_file) as f:
             # use safe_load instead of load

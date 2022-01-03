@@ -1,0 +1,38 @@
+Metadata-Version: 2.1
+Name: ctrlp
+Version: 2.1.0
+Summary: Top-level control interface for a Ctrl-P pressure control system.
+Home-page: https://github.com/cbteeple/pressure_control_interface
+Author: Clark Teeple
+Author-email: cbteeple@gmail.com
+License: MIT
+Description: # Ctrl-P 2.0: Python Control Interface
+        The top-level control interface for controlling a Ctrl-P pressure control system.
+        
+        ## Dependencies
+        All dependencies are managed in the reqirements file.
+        `pip install -r requirements.txt`
+        
+        ## Usage
+        [Instructions in the documentation](https://ctrl-p.cbteeple.com/top-level)
+        
+        ## About Ctrl-P
+        The Ctrl-P project is a full-stack pneumatic control system featuring smooth control of pressure at a high bandwidth.
+        
+        Ctrl-P has three parts:
+        - [Arduino-Based Firmware](https://github.com/cbteeple/pressure_controller): Contains the low-level control
+        - [Python Control Interface](https://github.com/cbteeple/pressure_control_interface): Controls pressure via serial comms
+        - [ROS Driver](https://github.com/cbteeple/pressure_control_cbt): Controls pressure via serial or RawUSB
+        
+        Related Packages:
+        - [Pressure Controller Skills](https://github.com/cbteeple/pressure_controller_skills): Build complex parametric skills using straightforward definition files.
+        - [Visual Servoing](https://github.com/cbteeple/ihm_servoing): Example of setting up a realtime feedback controller.
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: System :: Hardware :: Hardware Drivers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Description-Content-Type: text/markdown
