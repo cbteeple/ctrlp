@@ -12,3 +12,5 @@
 testing_pynput.py
 .vscode
 
+/dist/*
+/build/*
