@@ -4,3 +4,7 @@
 
 *.pyc
 .vscode
+
+*.egg-info
+build
+dist
