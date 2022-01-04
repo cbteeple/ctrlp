@@ -1,2 +1,3 @@
 # Include the command spec definitions
-recursive-include command_spec *
+recursive-include ctrlp/command_spec *
+recursive-include ctrlp/config *
