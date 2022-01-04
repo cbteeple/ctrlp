@@ -1,2 +1,2 @@
-# Include the command spec
+# Include the command spec definitions
 recursive-include command_spec *
