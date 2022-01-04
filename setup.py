@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='ctrlp',
-    version='1.0.1',
+    version='1.0.2',
     packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     license='MIT',
-    description='Top-level control interface for a Ctrl-P pressure control system.',
+    description='Low-level hardware interface for Ctrl-P pressure control systems.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     install_requires=[
@@ -17,7 +17,7 @@ setup(
         'PyYAML',
         'pyserial',
     ],
-    url='https://github.com/cbteeple/pressure_control_interface',
+    url='https://github.com/cbteeple/ctrlp',
     author='Clark Teeple',
     author_email='cbteeple@gmail.com',
     classifiers=[
