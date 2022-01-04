@@ -13,10 +13,13 @@ class CommandValidator:
         self.num_channels = num_channels
 
         this_file = os.path.dirname(os.path.abspath(__file__))
-        command_spec_file = os.path.join(this_file,'..','..','command_spec', 'commands_'+cmd_spec_version+'.yaml')
+        command_spec_file = os.path.join(this_file,'command_spec', 'commands_'+cmd_spec_version+'.yaml')
 
 
         self.cmd_spec = load_yaml(command_spec_file)
+        if self.cmd_spec is None:
+            raise ValueError('Command Spec Version "%s" not found'%(cmd_spec_version))
+
         self.cmd_list = []
         self.generate_command_list()
         self.data_in = None

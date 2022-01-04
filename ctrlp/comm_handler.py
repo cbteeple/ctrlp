@@ -138,9 +138,10 @@ class CommandHandler:
 
 
 class CommHandler:
-    def __init__(self):
+    def __init__(self, config_path='config'):
         self.serial_settings = None
         self.s = None
+        self.config_path = config_path
 
 
     def initialize(self, devname=None, baudrate=None, ser=None):
@@ -169,9 +170,8 @@ class CommHandler:
 
     # Get serial settings from a file
     def read_serial_settings(self, file=None):
-        file_path = os.path.dirname(os.path.realpath(__file__))
         if file is None:
-            file=os.path.join(file_path,"..","config","comms","comms_config.yaml")
+            file=os.path.join(self.config_path,"comms","comms_config.yaml")
         with open(file) as f:
             # use safe_load instead of load
             hardware_settings = yaml.safe_load(f)
@@ -180,7 +180,7 @@ class CommHandler:
         hw_file = hardware_settings.get('hardware')
         devnames = hardware_settings.get('devnames')
 
-        hw_fullfile=os.path.join(file_path,"..","config","hardware",hw_file+".yaml")
+        hw_fullfile=os.path.join(self.config_path,"hardware",hw_file+".yaml")
         with open(hw_fullfile) as f:
             # use safe_load instead of load
             serial_settings = yaml.safe_load(f)
@@ -200,8 +200,7 @@ class CommHandler:
     def set_serial_settings(self, settings=None, hw_profile=None, devices=None):
         if settings is None:
             if hw_profile is not None and devices is not None:
-                file_path = os.path.dirname(os.path.realpath(__file__))
-                hw_fullfile=os.path.join(file_path,"..","config","hardware",hw_profile)
+                hw_fullfile=os.path.join(self.config_path,"hardware",hw_profile)
                 with open(hw_fullfile) as f:
                     # use safe_load instead of load
                     settings = yaml.safe_load(f)

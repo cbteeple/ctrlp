@@ -32,20 +32,23 @@ def get_save_path(filename="save_paths.yaml", which=None):
 
 def load_yaml(filename):
     out = None
-    with open(filename, 'r') as f:
-        out = yaml.safe_load(f)
-    
+    try:
+        with open(filename, 'r') as f:
+            out = yaml.safe_load(f)
+    except:
+        pass    
     return out
 
 
 def save_yaml(data, filename):
+    out=None
     try:
         with open(filename, 'w') as f:
             yaml.dump(data, f, default_flow_style=False)
         out=True
     except:
-        out=False
-        
+        pass
+    
     return out
 
     
