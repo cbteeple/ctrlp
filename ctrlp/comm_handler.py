@@ -376,8 +376,11 @@ class DataSaver:
 
 
         self.out_file = open(filename, "w+", newline='')
-        self.file_writer = csv.writer(self.out_file)
-        self.file_writer.writerow(self.data_flat_labels)
+        if (filetype=='csv'):
+            self.file_writer = csv.writer(self.out_file)
+            self.file_writer.writerow(self.data_flat_labels)
+        else:
+            raise ValueError('Unsupported filetype %s'%(filetype))
 
 
     def save_data_lines(self,data_lines):
