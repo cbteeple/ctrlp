@@ -1,8 +1,6 @@
 # Ctrl-P: Hardware Interface
 The low-level hardware control interface for controlling a Ctrl-P pressure control system.
 
-## Versions
-You can always keep up to date by using the version in the master branch. For previous stable versions, checkout the [releases](https://github.com/cbteeple/ctrlp/releases).
 
 ## Installation
 ### Install the release version
