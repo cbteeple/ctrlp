@@ -1,0 +1,9 @@
+preferred: "../examples/data" #"F:/pressure_data"
+default:   "../examples/data"
+temp:      "../examples/temp"
+
+config: "../examples/config"
+
+traj_setup: "../examples/traj_setup"
+traj_built: "../examples/traj_built"
+#traj_built: C:\Users\clt596\Documents\Microrobotics Lab\Soft Grasping Platform\modeling\fingertip_model\traj\sweep_dobj_ltipcommand_fudge0.1_newcal_base100
