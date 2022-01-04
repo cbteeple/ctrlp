@@ -9,8 +9,8 @@ import re
 from multiprocessing import Process
 
 
-from validate_commands import CommandValidator
-from helper_utils import all_equal
+from .validate_commands import CommandValidator
+from .helper_utils import all_equal
 
 
 

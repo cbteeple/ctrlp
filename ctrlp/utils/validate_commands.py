@@ -4,7 +4,7 @@ import os
 import yaml
 import copy
 
-
+from .get_files import load_yaml
 
 
 class CommandValidator:
@@ -15,10 +15,8 @@ class CommandValidator:
         this_file = os.path.dirname(os.path.abspath(__file__))
         command_spec_file = os.path.join(this_file,'..','..','command_spec', 'commands_'+cmd_spec_version+'.yaml')
 
-        with open(command_spec_file) as f:
-            # use safe_load instead of load
-            self.cmd_spec = yaml.safe_load(f)
-            f.close()
+
+        self.cmd_spec = load_yaml(command_spec_file)
         self.cmd_list = []
         self.generate_command_list()
         self.data_in = None

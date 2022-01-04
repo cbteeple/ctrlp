@@ -2,7 +2,7 @@ import sys
 import os
 import copy
 
-from helper_utils import flatten_dict
+from .helper_utils import flatten_dict
 
 
 
