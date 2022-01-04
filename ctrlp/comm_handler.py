@@ -375,7 +375,7 @@ class DataSaver:
         self.data_flat_labels = data_flat_labels
 
 
-        self.out_file = open(filename, "w+")
+        self.out_file = open(filename, "w+", newline='')
         self.file_writer = csv.writer(self.out_file)
         self.file_writer.writerow(self.data_flat_labels)
 
